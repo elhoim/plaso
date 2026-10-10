@@ -35,6 +35,29 @@ class EventFormattingHelper:
         """
 
 
+class _EventTimeMemo:
+    """Per-event cache of a shared timestamp decomposition.
+
+    Multiple time-derived fields (date, time, time zone) of a single event
+    decompose the same instant. This memo lets them share the decomposition
+    within one GetFieldValues call instead of repeating it per field.
+
+    Attributes:
+      date_values (tuple[int]): date and time of day values
+          (year, month, day_of_month, hours, minutes, seconds) in UTC, or None
+          if not yet computed.
+      local_datetime (datetime.datetime): the equivalent date and time in the
+          output time zone, or None on conversion failure.
+      local_datetime_computed (bool): True if local_datetime has been computed.
+    """
+
+    def __init__(self):
+        """Initializes an event time memo."""
+        self.date_values = None
+        self.local_datetime = None
+        self.local_datetime_computed = False
+
+
 class FieldFormattingHelper:
     """Output module field formatting helper."""
 
@@ -51,6 +74,7 @@ class FieldFormattingHelper:
         self._callback_functions = {}
         self._event_data_stream_field_names = event_data_stream.GetAttributeNames()
         self._event_tag_field_names = []
+        self._event_time_memo = None
 
         for field_name, callback_name in self._FIELD_FORMAT_CALLBACKS.items():
             if callback_name == "_FormatTag":
@@ -59,6 +83,85 @@ class FieldFormattingHelper:
                 self._callback_functions[field_name] = getattr(
                     self, callback_name, None
                 )
+
+    def BeginEventTimeMemo(self):
+        """Starts caching the timestamp decomposition of a single event.
+
+        The time-derived field formatters share the decomposition of the event
+        timestamp while this memo is active. The memo must be bound to the
+        processing of exactly one event and cleared afterwards, so it never
+        leaks across events.
+        """
+        self._event_time_memo = _EventTimeMemo()
+
+    def EndEventTimeMemo(self):
+        """Stops caching the timestamp decomposition of a single event."""
+        self._event_time_memo = None
+
+    def _GetDateWithTimeOfDay(self, event):
+        """Retrieves the date and time of day values of an event in UTC.
+
+        The result is memoized for the duration of a single event so that
+        multiple time-derived fields do not repeat the decomposition.
+
+        Args:
+          event (EventObject): event.
+
+        Returns:
+          tuple[int]: date and time of day values
+              (year, month, day_of_month, hours, minutes, seconds) in UTC. Any
+              value can be None if the timestamp could not be decomposed.
+        """
+        memo = self._event_time_memo
+        if memo is not None and memo.date_values is not None:
+            return memo.date_values
+
+        date_time = event.date_time
+        if not date_time or date_time.is_local_time:
+            date_time = dfdatetime_posix_time.PosixTimeInMicroseconds(
+                timestamp=event.timestamp
+            )
+
+        # Note that GetDateWithTimeOfDay will return the date and time in UTC,
+        # so no adjustment for date_time.time_zone_offset is needed.
+        date_values = date_time.GetDateWithTimeOfDay()
+
+        if memo is not None:
+            memo.date_values = date_values
+
+        return date_values
+
+    def _GetLocalDateTime(self, output_mediator, date_values):
+        """Retrieves an event date and time in the output time zone.
+
+        The result is memoized for the duration of a single event so that
+        multiple time-derived fields do not repeat the time zone conversion.
+
+        Args:
+          output_mediator (OutputMediator): mediates interactions between output
+              modules and other components, such as storage and dfVFS.
+          date_values (tuple[int]): date and time of day values
+              (year, month, day_of_month, hours, minutes, seconds) in UTC.
+
+        Returns:
+          datetime.datetime: date and time in the output time zone, or None if
+              the conversion failed.
+        """
+        memo = self._event_time_memo
+        if memo is not None and memo.local_datetime_computed:
+            return memo.local_datetime
+
+        try:
+            datetime_object = datetime.datetime(*date_values, tzinfo=pytz.UTC)
+            datetime_object = datetime_object.astimezone(output_mediator.time_zone)
+        except (OSError, OverflowError, TypeError, ValueError):
+            datetime_object = None
+
+        if memo is not None:
+            memo.local_datetime = datetime_object
+            memo.local_datetime_computed = True
+
+        return datetime_object
 
     # The field format callback methods require specific arguments hence
     # the check for unused arguments is disabled here.
@@ -445,30 +548,19 @@ class FieldFormattingHelper:
         if not event.timestamp:
             return "--:--:--"
 
-        date_time = event.date_time
-        if not date_time or date_time.is_local_time:
-            date_time = dfdatetime_posix_time.PosixTimeInMicroseconds(
-                timestamp=event.timestamp
-            )
-
-        year, month, day_of_month, hours, minutes, seconds = (
-            date_time.GetDateWithTimeOfDay()
-        )
+        date_values = self._GetDateWithTimeOfDay(event)
+        _, _, _, hours, minutes, seconds = date_values
 
         if output_mediator.time_zone != pytz.UTC:
-            try:
-                datetime_object = datetime.datetime(
-                    year, month, day_of_month, hours, minutes, seconds, tzinfo=pytz.UTC
-                )
-                datetime_object = datetime_object.astimezone(output_mediator.time_zone)
-
+            datetime_object = self._GetLocalDateTime(output_mediator, date_values)
+            if datetime_object is None:
+                hours, minutes, seconds = (None, None, None)
+            else:
                 hours, minutes, seconds = (
                     datetime_object.hour,
                     datetime_object.minute,
                     datetime_object.second,
                 )
-            except (OSError, OverflowError, TypeError, ValueError):
-                hours, minutes, seconds = (None, None, None)
 
         if None in (hours, minutes, seconds):
             message = (
@@ -497,17 +589,11 @@ class FieldFormattingHelper:
         if not event.timestamp:
             return "-"
 
-        date_time = event.date_time
-        if not date_time or date_time.is_local_time:
-            date_time = dfdatetime_posix_time.PosixTimeInMicroseconds(
-                timestamp=event.timestamp
-            )
-
         if output_mediator.time_zone == pytz.UTC:
             return "UTC"
 
-        year, month, day_of_month, hours, minutes, seconds = (
-            date_time.GetDateWithTimeOfDay()
+        year, month, day_of_month, hours, minutes, seconds = self._GetDateWithTimeOfDay(
+            event
         )
         try:
             # For tzname to work the datetime object must be naive (without

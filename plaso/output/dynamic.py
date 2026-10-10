@@ -1,9 +1,6 @@
 """Dynamic selected delimiter separated values output module."""
 
-import datetime
 import pytz
-
-from dfdatetime import posix_time as dfdatetime_posix_time
 
 from plaso.output import formatting_helper
 from plaso.output import manager
@@ -66,30 +63,17 @@ class DynamicFieldFormattingHelper(formatting_helper.FieldFormattingHelper):
         if not event.timestamp:
             return "0000-00-00"
 
-        date_time = event.date_time
-        if not date_time or date_time.is_local_time:
-            date_time = dfdatetime_posix_time.PosixTimeInMicroseconds(
-                timestamp=event.timestamp
-            )
+        date_values = self._GetDateWithTimeOfDay(event)
+        year, month, day_of_month, _, _, _ = date_values
 
-        # Note that GetDateWithTimeOfDay will return the date and time in UTC,
-        # so no adjustment for date_time.time_zone_offset is needed.
-        year, month, day_of_month, hours, minutes, seconds = (
-            date_time.GetDateWithTimeOfDay()
-        )
         if output_mediator.time_zone != pytz.UTC:
-            try:
-                datetime_object = datetime.datetime(
-                    year, month, day_of_month, hours, minutes, seconds, tzinfo=pytz.UTC
-                )
-                datetime_object = datetime_object.astimezone(output_mediator.time_zone)
-
+            datetime_object = self._GetLocalDateTime(output_mediator, date_values)
+            if datetime_object is None:
+                year, month, day_of_month = (None, None, None)
+            else:
                 year = datetime_object.year
                 month = datetime_object.month
                 day_of_month = datetime_object.day
-
-            except (OSError, OverflowError, TypeError, ValueError):
-                year, month, day_of_month = (None, None, None)
 
         if None in (year, month, day_of_month):
             message = (

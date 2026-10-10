@@ -60,24 +60,31 @@ class DSVEventFormattingHelper(formatting_helper.EventFormattingHelper):
           dict[str, str]: output field values per name.
         """
         field_values = collections.OrderedDict()
-        for field_name in self._field_names:
-            field_value = self._field_formatting_helper.GetFormattedField(
-                output_mediator,
-                field_name,
-                event,
-                event_data,
-                event_data_stream,
-                event_tag,
-            )
 
-            if field_value is None and field_name in self._custom_fields:
-                field_value = self._custom_fields.get(field_name)
+        # The time derived fields of a single event decompose the same
+        # timestamp, so let them share a single timestamp decomposition.
+        self._field_formatting_helper.BeginEventTimeMemo()
+        try:
+            for field_name in self._field_names:
+                field_value = self._field_formatting_helper.GetFormattedField(
+                    output_mediator,
+                    field_name,
+                    event,
+                    event_data,
+                    event_data_stream,
+                    event_tag,
+                )
 
-            if field_value is None:
-                field_value = "-"
+                if field_value is None and field_name in self._custom_fields:
+                    field_value = self._custom_fields.get(field_name)
 
-            field_value = self._SanitizeField(field_value)
-            field_values[field_name] = field_value
+                if field_value is None:
+                    field_value = "-"
+
+                field_value = self._SanitizeField(field_value)
+                field_values[field_name] = field_value
+        finally:
+            self._field_formatting_helper.EndEventTimeMemo()
 
         return field_values
 
