@@ -4,13 +4,11 @@ For documentation on the L2T CSV format see:
   https://forensics.wiki/l2t_csv
 """
 
-import datetime
 import pytz
 
 from acstore.containers import interface as containers_interface
 
 from dfdatetime import interface as dfdatetime_interface
-from dfdatetime import posix_time as dfdatetime_posix_time
 
 from plaso.output import formatting_helper
 from plaso.output import logger
@@ -37,31 +35,37 @@ class L2TCSVEventFormattingHelper(shared_dsv.DSVEventFormattingHelper):
         """
         timestamp_descriptions = [event.timestamp_desc for event, _, _, _ in macb_group]
 
-        field_values = []
-        for field_name in self._field_names:
-            if field_name == "MACB":
-                field_value = output_mediator.GetMACBRepresentationFromDescriptions(
-                    timestamp_descriptions
-                )
-            elif field_name == "type":
-                # TODO: fix timestamp description in source.
-                field_value = "; ".join(timestamp_descriptions)
-            else:
-                event, event_data, event_data_stream, event_tag = macb_group[0]
-                field_value = self._field_formatting_helper.GetFormattedField(
-                    output_mediator,
-                    field_name,
-                    event,
-                    event_data,
-                    event_data_stream,
-                    event_tag,
-                )
+        # All events in a MACB group share the same timestamp, so the time
+        # derived fields can share a single timestamp decomposition.
+        self._field_formatting_helper.BeginEventTimeMemo()
+        try:
+            field_values = []
+            for field_name in self._field_names:
+                if field_name == "MACB":
+                    field_value = output_mediator.GetMACBRepresentationFromDescriptions(
+                        timestamp_descriptions
+                    )
+                elif field_name == "type":
+                    # TODO: fix timestamp description in source.
+                    field_value = "; ".join(timestamp_descriptions)
+                else:
+                    event, event_data, event_data_stream, event_tag = macb_group[0]
+                    field_value = self._field_formatting_helper.GetFormattedField(
+                        output_mediator,
+                        field_name,
+                        event,
+                        event_data,
+                        event_data_stream,
+                        event_tag,
+                    )
 
-            if field_value is None:
-                field_value = "-"
+                if field_value is None:
+                    field_value = "-"
 
-            field_value = self._SanitizeField(field_value)
-            field_values.append(field_value)
+                field_value = self._SanitizeField(field_value)
+                field_values.append(field_value)
+        finally:
+            self._field_formatting_helper.EndEventTimeMemo()
 
         return self.field_delimiter.join(field_values)
 
@@ -143,30 +147,17 @@ class L2TCSVFieldFormattingHelper(formatting_helper.FieldFormattingHelper):
         if not event.timestamp:
             return "00/00/0000"
 
-        date_time = event.date_time
-        if not date_time or date_time.is_local_time:
-            date_time = dfdatetime_posix_time.PosixTimeInMicroseconds(
-                timestamp=event.timestamp
-            )
+        date_values = self._GetDateWithTimeOfDay(event)
+        year, month, day_of_month, _, _, _ = date_values
 
-        # Note that GetDateWithTimeOfDay will return the date and time in UTC,
-        # so no adjustment for date_time.time_zone_offset is needed.
-        year, month, day_of_month, hours, minutes, seconds = (
-            date_time.GetDateWithTimeOfDay()
-        )
         if output_mediator.time_zone != pytz.UTC:
-            try:
-                datetime_object = datetime.datetime(
-                    year, month, day_of_month, hours, minutes, seconds, tzinfo=pytz.UTC
-                )
-                datetime_object = datetime_object.astimezone(output_mediator.time_zone)
-
+            datetime_object = self._GetLocalDateTime(output_mediator, date_values)
+            if datetime_object is None:
+                year, month, day_of_month = (None, None, None)
+            else:
                 year = datetime_object.year
                 month = datetime_object.month
                 day_of_month = datetime_object.day
-
-            except (OSError, OverflowError, TypeError, ValueError):
-                year, month, day_of_month = (None, None, None)
 
         if None in (year, month, day_of_month):
             message = (
