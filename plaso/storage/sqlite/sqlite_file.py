@@ -38,6 +38,17 @@ class SQLiteStorageFile(sqlite_store.SQLiteAttributeContainerStore):
     _CONTAINER_TYPE_EVENT_DATA = events.EventData.CONTAINER_TYPE
     _CONTAINER_TYPE_EVENT_TAG = events.EventTag.CONTAINER_TYPE
 
+    # Parameters for the zlib deflate stream used to compress serialized
+    # attribute containers. Containers are written one per row and are small
+    # (a few hundred bytes), so per-call deflateInit/End overhead dominates and
+    # the compression level barely affects the output size. A low level cuts the
+    # match-chain search, a 4 KiB window (wbits=12) still exceeds the row size
+    # and a reduced memory level trims the init cost. Streams are standard zlib
+    # (window <= 15) so plain zlib.decompress() reads them unchanged.
+    _COMPRESSION_LEVEL = 1
+    _COMPRESSION_WBITS = 12
+    _COMPRESSION_MEMORY_LEVEL = 4
+
     def __init__(self):
         """Initializes a SQLite-based storage file."""
         super().__init__()
@@ -301,7 +312,14 @@ class SQLiteStorageFile(sqlite_store.SQLiteAttributeContainerStore):
             serialized_data = self._SerializeAttributeContainer(container)
 
             if self.compression_format == definitions.COMPRESSION_FORMAT_ZLIB:
-                compressed_data = zlib.compress(serialized_data)
+                compressor = zlib.compressobj(
+                    self._COMPRESSION_LEVEL,
+                    zlib.DEFLATED,
+                    self._COMPRESSION_WBITS,
+                    self._COMPRESSION_MEMORY_LEVEL,
+                )
+                compressed_data = compressor.compress(serialized_data)
+                compressed_data += compressor.flush()
                 column_value = sqlite3.Binary(compressed_data)
             else:
                 compressed_data = b""
