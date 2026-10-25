@@ -332,7 +332,9 @@ class PstealTool(
         helpers_manager.ArgumentHelperManager.ParseOptions(
             options, self, names=argument_helper_names
         )
-        self._ParseLogFileOptions(options)
+        helpers_manager.ArgumentHelperManager.ParseOptions(
+            options, self, names=["log_file"]
+        )
 
         self._ParseStorageMediaOptions(options)
 
