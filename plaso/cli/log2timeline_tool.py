@@ -208,7 +208,9 @@ class Log2TimelineTool(extraction_tool.ExtractionTool):
             default=True,
             help="Disable the dependencies check.",
         )
-        self.AddLogFileOptions(info_group)
+        helpers_manager.ArgumentHelperManager.AddCommandLineArguments(
+            info_group, names=["log_file"]
+        )
 
         helpers_manager.ArgumentHelperManager.AddCommandLineArguments(
             info_group, names=["status_view"]
@@ -353,7 +355,9 @@ class Log2TimelineTool(extraction_tool.ExtractionTool):
         helpers_manager.ArgumentHelperManager.ParseOptions(
             options, self, names=argument_helper_names
         )
-        self._ParseLogFileOptions(options)
+        helpers_manager.ArgumentHelperManager.ParseOptions(
+            options, self, names=["log_file"]
+        )
 
         self._ParseStorageMediaOptions(options)
 
