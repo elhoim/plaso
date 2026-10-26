@@ -484,6 +484,13 @@ class ImageExportTool(storage_media_tool.StorageMediaTool):
 
         output_writer.Write("Extracting file entries.\n")
 
+        # A directory included by the filter file also includes its files and
+        # subdirectories. The processed path specifications are tracked, since
+        # a file entry can be found both via an included directory and via an
+        # included path within that directory.
+        include_directory_contents = bool(filter_file and included_find_specs)
+        processed_path_specs = set() if include_directory_contents else None
+
         for file_system_path_spec in file_system_path_specs:
             path_spec_generator = self._path_spec_extractor.ExtractPathSpecs(
                 file_system_path_spec,
@@ -491,33 +498,85 @@ class ImageExportTool(storage_media_tool.StorageMediaTool):
                 resolver_context=self._resolver_context,
             )
             for path_spec in path_spec_generator:
-                file_entry = path_spec_resolver.Resolver.OpenFileEntry(
-                    path_spec, resolver_context=self._resolver_context
+                file_entry = self._ExtractPathSpec(
+                    path_spec,
+                    destination_path,
+                    excluded_find_specs,
+                    processed_path_specs,
+                    skip_duplicates=skip_duplicates,
                 )
-                if not file_entry:
-                    path_spec_string = self._GetPathSpecificationString(path_spec)
-                    logger.warning(
-                        f"Unable to open file entry for path specification: "
-                        f"{path_spec_string:s}"
-                    )
+                if not include_directory_contents or not file_entry:
                     continue
 
-                skip_file_entry = False
-                for find_spec in excluded_find_specs or []:
-                    skip_file_entry = find_spec.CompareLocation(file_entry)
-                    if skip_file_entry:
-                        break
-
-                if skip_file_entry:
-                    logger.info(
-                        f"Skipped: {file_entry.path_spec.location:s} because of "
-                        f"exclusion filter."
-                    )
+                if not file_entry.IsDirectory():
                     continue
 
-                self._ExtractFileEntry(
-                    file_entry, destination_path, skip_duplicates=skip_duplicates
+                sub_path_spec_generator = self._path_spec_extractor.ExtractPathSpecs(
+                    file_entry.path_spec, resolver_context=self._resolver_context
                 )
+                for sub_path_spec in sub_path_spec_generator:
+                    self._ExtractPathSpec(
+                        sub_path_spec,
+                        destination_path,
+                        excluded_find_specs,
+                        processed_path_specs,
+                        skip_duplicates=skip_duplicates,
+                    )
+
+    def _ExtractPathSpec(
+        self,
+        path_spec,
+        destination_path,
+        excluded_find_specs,
+        processed_path_specs,
+        skip_duplicates=True,
+    ):
+        """Extracts the file entry of a path specification.
+
+        Args:
+          path_spec (dfvfs.PathSpec): path specification of the file entry.
+          destination_path (str): path where the extracted files should be stored.
+          excluded_find_specs (list[dfvfs.FindSpec]): find specifications of
+              file entries that should not be extracted or None if not set.
+          processed_path_specs (set[str]): comparable string representations of
+              the path specifications that were already processed or None if
+              processed path specifications are not tracked.
+          skip_duplicates (Optional[bool]): True if files with duplicate content
+              should be skipped.
+
+        Returns:
+          dfvfs.FileEntry: file entry or None if the file entry could not be
+              opened, was already processed or was excluded.
+        """
+        if processed_path_specs is not None:
+            if path_spec.comparable in processed_path_specs:
+                return None
+
+            processed_path_specs.add(path_spec.comparable)
+
+        file_entry = path_spec_resolver.Resolver.OpenFileEntry(
+            path_spec, resolver_context=self._resolver_context
+        )
+        if not file_entry:
+            path_spec_string = self._GetPathSpecificationString(path_spec)
+            logger.warning(
+                f"Unable to open file entry for path specification: "
+                f"{path_spec_string:s}"
+            )
+            return None
+
+        for find_spec in excluded_find_specs or []:
+            if find_spec.CompareLocation(file_entry):
+                logger.info(
+                    f"Skipped: {file_entry.path_spec.location:s} because of "
+                    f"exclusion filter."
+                )
+                return None
+
+        self._ExtractFileEntry(
+            file_entry, destination_path, skip_duplicates=skip_duplicates
+        )
+        return file_entry
 
     def _ParseExtensionsString(self, extensions_string):
         """Parses the extensions string.

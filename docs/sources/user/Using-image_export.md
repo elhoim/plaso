@@ -77,6 +77,21 @@ By default image_export.py will not extract duplicate files, however paths to al
 ### Collection filters
 More details: [collection filters](Collection-Filters.md)
 
+A path in a filter file that refers to a directory includes the files and
+subdirectories of that directory. For example to export all files in the
+``/home`` directory and its subdirectories, use a filter file such as:
+
+```
+description: Home directories.
+type: include
+paths:
+- '/home'
+```
+
+```
+image_export.py --filter-file home.yaml [IMAGE]
+```
+
 
 ## Other options
 
