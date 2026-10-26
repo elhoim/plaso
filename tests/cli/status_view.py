@@ -57,11 +57,19 @@ class StatusViewTest(test_lib.CLIToolTestCase):
     # TODO: add tests for _ClearScreen
     # TODO: add tests for _FormatAnalysisStatusTableRow
     # TODO: add tests for _FormatExtractionStatusTableRow
-    # TODO: add tests for _FormatSizeInUnitsOf1024
     # TODO: add tests for _PrintAnalysisStatusHeader
     # TODO: add tests for _PrintAnalysisStatusUpdateLinear
     # TODO: add tests for _PrintAnalysisStatusUpdateWindow
     # TODO: add tests for _PrintEventsStatus
+
+    def testFormatSizeInUnitsOf1024(self):
+        """Tests the _FormatSizeInUnitsOf1024 function."""
+        output_writer = test_lib.TestOutputWriter()
+        test_view = status_view.StatusView(output_writer, "test_tool")
+
+        self.assertEqual(test_view._FormatSizeInUnitsOf1024(1024**5), "1.0 PiB")
+        self.assertEqual(test_view._FormatSizeInUnitsOf1024(1024**6), "1.0 EiB")
+        self.assertEqual(test_view._FormatSizeInUnitsOf1024(1024**8), "1.0 YiB")
 
     def testPrintExtractionStatusUpdateLinear(self):
         """Tests the PrintExtractionStatusUpdateLinear function."""
