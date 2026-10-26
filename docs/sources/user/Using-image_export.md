@@ -73,6 +73,16 @@ image_export.py -w ~/image_export_output [IMAGE]
 ### Duplicate handling
 By default image_export.py will not extract duplicate files, however paths to all duplicate files will be stored in hashes.json file. If you'd like to extract duplicate files add `` --include_duplicates`` flag.
 
+### File system metadata files
+By default image_export.py will not extract file system metadata files, such
+as the NTFS ``$MFT``, ``$Bitmap`` and ``$UsnJrnl`` files, also not when they
+match a filter, for example ``--names '$MFT'``. If you'd like to extract file
+system metadata files add the ``--include_metadata_files`` flag:
+
+```
+image_export.py --include_metadata_files [IMAGE]
+```
+
 
 ### Collection filters
 More details: [collection filters](Collection-Filters.md)
