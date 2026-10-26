@@ -195,6 +195,7 @@ File System Format support is provided by [dfVFS](https://dfvfs.readthedocs.io/e
 * BagMRU (or ShellBags) Registry data
 * Boot Execution Registry data
 * CCleaner Registry data
+* LANDesk software monitoring Registry data
 * Microsoft Internet Explorer zone settings Registry data
 * Microsoft Office MRU Registry data
 * Microsoft Outlook search MRU Registry data
