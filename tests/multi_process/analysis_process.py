@@ -6,10 +6,13 @@ import time
 import unittest
 
 from plaso.analysis import interface as analysis_interface
+from plaso.analysis import mediator as analysis_mediator
+from plaso.containers import events
 from plaso.engine import configurations
 from plaso.multi_process import analysis_process
 from plaso.multi_process import plaso_queue
 from plaso.multi_process import zeromq_queue
+from plaso.storage.fake import writer as fake_writer
 
 from tests import test_lib as shared_test_lib
 from tests.multi_process import test_lib
@@ -46,6 +49,27 @@ class TestAnalysisPlugin(analysis_interface.AnalysisPlugin):
           event_data_stream (EventDataStream): event data stream.
         """
         return
+
+
+class TestFailingAnalysisPlugin(TestAnalysisPlugin):
+    """Analysis plugin for testing that fails to examine events."""
+
+    NAME = "test_failing_plugin"
+
+    def ExamineEvent(self, mediator, event, event_data, event_data_stream):
+        """Analyzes an event.
+
+        Args:
+          mediator (AnalysisMediator): mediates interactions between analysis
+              plugins and other components, such as storage and dfVFS.
+          event (EventObject): event.
+          event_data (EventData): event data.
+          event_data_stream (EventDataStream): event data stream.
+
+        Raises:
+          RuntimeError: always.
+        """
+        raise RuntimeError("Test failure")
 
 
 class AnalysisProcessTest(test_lib.MultiProcessingTestCase):
@@ -126,7 +150,54 @@ class AnalysisProcessTest(test_lib.MultiProcessingTestCase):
             # Before the temporary directory is removed.
             time.sleep(1)
 
-    # TODO: add test for _ProcessEvent.
+    def testProcessEventTriple(self):
+        """Tests the _ProcessEventTriple function."""
+        storage_writer = fake_writer.FakeStorageWriter()
+        storage_writer.Open()
+
+        mediator = analysis_mediator.AnalysisMediator()
+        mediator.SetStorageWriter(storage_writer)
+
+        event_triple = events.EventTriple()
+        event_triple.event = events.EventObject()
+        event_triple.event_data = events.EventData()
+        event_triple.event_data_stream = events.EventDataStream()
+
+        with shared_test_lib.TempDirectory() as temp_directory:
+            configuration = configurations.ProcessingConfiguration()
+            configuration.task_storage_path = temp_directory
+
+            test_process = analysis_process.AnalysisProcess(
+                None, TestAnalysisPlugin(), configuration, [], name="TestAnalysis"
+            )
+            test_process._ProcessEventTriple(mediator, event_triple)
+
+            number_of_warnings = storage_writer.GetNumberOfAttributeContainers(
+                "analysis_warning"
+            )
+            self.assertEqual(number_of_warnings, 0)
+
+            test_process = analysis_process.AnalysisProcess(
+                None,
+                TestFailingAnalysisPlugin(),
+                configuration,
+                [],
+                name="TestAnalysis",
+            )
+            test_process._ProcessEventTriple(mediator, event_triple)
+
+            warnings = list(storage_writer.GetAttributeContainers("analysis_warning"))
+            self.assertEqual(len(warnings), 1)
+            self.assertEqual(warnings[0].plugin_name, "test_failing_plugin")
+            self.assertEqual(
+                warnings[0].message,
+                (
+                    "Unhandled exception while processing event with error: "
+                    "Test failure"
+                ),
+            )
+
+        storage_writer.Close()
 
     def testSignalAbort(self):
         """Tests the SignalAbort function."""
