@@ -46,7 +46,7 @@ equals | Determine if the attribute is equal to the value, meaning that both par
 `is` | Same as equals.
 `==` | Same as equals.
 `!=` | Negative matching of equals, that is it checks if it is not equal to the value (same as "not is")
-`contains` | If the value is a string it checks if the lowercase version of the value is in the lowercase value of the attribute. That is this is a case insensitive substring match.
+`contains` | If the attribute is a string it checks if the lowercase version of the value is in the lowercase value of the attribute. That is this is a case insensitive substring match. If the attribute is a list, such as `strings`, it checks if the value is one of the list elements. That is this is a case sensitive exact match on the individual elements. Also see the [path value helper](#path-value-helper).
 `>` | Checks if the value is greater than the attribute. If the attribute is date or timestamp and the value is an integer it compares against the timestamp attribute. If the attribute is date and the value is a string it will convert the string value to an integer and then make the comparison.
 `>=` | Checks if the value is greater or equal than the attribute. If the attribute is date or timestamp the same behavior as in ">" is observed.
 `<` | Checks if the value is less than the attribute. If the attribute is date or timestamp the same checks are made as in ">", except the comparison is to whether or not the value is less or equal than the supplied date.
@@ -79,11 +79,30 @@ This event filter applies to all events where:
 * the message_body attribute contains the substring 'root' (case insensitive).
 
 ```
-data_type contains 'firefox' AND pathspec.vss_store_number > 0
+data_type is 'windows:evtx:record' and strings contains 'Administrator'
 ```
 
-* The data type contains the word "firefox";
-* The event was extracted from a Volume Shadow Snapshot (VSS).
+This event filter applies to all events where:
+
+* the event has data type 'windows:evtx:record' (case sensitive) and;
+* one of the elements of the strings attribute is 'Administrator' (case sensitive).
+
+## Event attributes
+
+An event filter can use the attributes of the event data, which differ per
+data type, and the following attributes:
+
+Attribute | Notes
+---- | ----
+`timestamp` | Date and time of the event. `date`, `datetime` and `time` are aliases of `timestamp`.
+`timestamp_desc` | Description of the timestamp of the event.
+`tag` | Labels of the event tag, for example `tag contains 'browser_search'`.
+`file_entropy`, `md5_hash`, `sha1_hash`, `sha256_hash`, `yara_match` | Attributes of the event data stream, which are only set if the corresponding analyzer was enabled during extraction.
+
+Attribute names that contain a `.`, such as `path_spec.vss_store_number`, are
+not supported. The `path_spec` attribute of the event data stream and the
+former `pathspec` name cannot be used to filter on the location the event was
+extracted from.
 
 ## Value type helpers
 
@@ -102,9 +121,9 @@ DATETIME(int|str)
 It supports 2 different types of arguments, either:
 
 * an integer containing a POSIX timestamp in microseconds
-* an ISO 8601 date and time string. Note that more common forms of ISO 8601 string are supported but all. The maximum supported granularity is microseconds.
+* an ISO 8601 date and time string. Note that more common forms of ISO 8601 string are supported but not all. The maximum supported granularity is microseconds.
 
-For exeample:
+For example:
 
 ```
 DATETIME(0)
@@ -118,16 +137,26 @@ The path helper is:
 PATH(str)
 ```
 
-It allows to check a path on a per path segment basis.
+It allows to check a path on a per path segment basis, using `/` as the path
+segment separator. The path segments are compared case sensitive. The path
+helper can be used with the `contains` and `==` operators.
 
 For example the path helper:
 ```
-path contains PATH('bin')
+filename contains PATH('bin')
 ```
 
-Will match `/usr/bin` and `/usr/local/bin` but not `/usr/local/sbin`.
+Will match `/usr/bin` and `/usr/local/bin` but not `/usr/local/sbin` or
+`/usr/BIN`.
 
-## References
+The path helper can contain multiple path segments. A leading `/` only matches
+from the start of the path. For example `filename contains PATH('local/bin')`
+and `filename contains PATH('/usr/local')` both match `/usr/local/bin/ls`, but
+`filename contains PATH('/local/bin')` does not.
 
-* [log2timeline filtering 101](http://blog.kiddaland.net/2012/12/log2timeline-filtering-101.html)
+```
+filename == PATH('/usr/local/bin/ls')
+```
+
+Will match `/usr/local/bin/ls` and `/usr//local/bin/ls`.
 
