@@ -187,6 +187,8 @@ The sections below provide more context regarding specific tagging rules.
 
 The Windows tagging rules are stored in the file: [tag_windows.txt](https://github.com/log2timeline/plaso/blob/main/plaso/data/tag_windows.txt)
 
+A Windows XML EventLog (EVTX) rule matches an EventLog provider by its identifier (GUID), by its name or by any of the other Event Log source names of the provider, as listed in [winevt-kb](https://winevt-kb.readthedocs.io/en/latest/sources/eventlog-providers/index.html).
+
 The sections below provide more context regarding specific tagging rules.
 
 ### application_execution
