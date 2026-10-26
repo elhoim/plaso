@@ -3,6 +3,10 @@
 
 import unittest
 
+from acstore.containers import interface as containers_interface
+
+from dfdatetime import filetime as dfdatetime_filetime
+
 from plaso.formatters import interface
 from plaso.lib import definitions
 
@@ -79,6 +83,8 @@ class FlagsEventFormatterHelperTest(test_lib.EventFormatterTestCase):
 class EventFormatterTest(test_lib.EventFormatterTestCase):
     """Tests for the event formatter."""
 
+    # pylint: disable=protected-access
+
     _TEST_EVENTS = [
         {
             "data_type": "test:event",
@@ -97,7 +103,32 @@ class EventFormatterTest(test_lib.EventFormatterTestCase):
         )
         self.assertIsNotNone(event_formatter)
 
-    # TODO: add tests for _FormatMessage
+    def testFormatMessage(self):
+        """Tests the _FormatMessage function."""
+        event_formatter = interface.BasicEventFormatter(
+            data_type="test", format_string="{text}"
+        )
+
+        event_values = {
+            "_event_data_stream_identifier": (
+                containers_interface.AttributeContainerIdentifier(
+                    name="event_data_stream", sequence_number=1
+                )
+            ),
+            "data_type": "test",
+            "date_time": dfdatetime_filetime.Filetime(timestamp=0x01CB3A623D0A17CE),
+            "date_times": [dfdatetime_filetime.Filetime(timestamp=0x01CB3A623D0A17CE)],
+            "text": "text",
+        }
+
+        message = event_formatter._FormatMessage("{text}", event_values)
+        self.assertEqual(message, "text")
+
+        # A format string with a missing attribute falls back to the attribute
+        # values, without values that have a non-reproducible representation.
+        message = event_formatter._FormatMessage("{text} {missing}", event_values)
+        self.assertEqual(message, "data_type: test text: text")
+
     # TODO: add tests for _FormatMessages
 
     def testGetFormatStringAttributeNames(self):
