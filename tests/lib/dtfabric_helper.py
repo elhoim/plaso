@@ -2,6 +2,7 @@
 """Tests for the dtFabric format definition helper mix-in."""
 
 import io
+import os
 import unittest
 
 from dtfabric import errors as dtfabric_errors
@@ -105,6 +106,22 @@ members:
         yaml_definition=_DATA_TYPE_FABRIC_DEFINITION
     )
 
+    def _CreateTestHelper(self, path):
+        """Creates a dtFabric format definition helper for testing.
+
+        Args:
+          path (str): path of the dtFabric definition file.
+
+        Returns:
+          DtFabricHelper: dtFabric format definition helper.
+        """
+        helper_class = type(
+            "TestDtFabricHelper",
+            (dtfabric_helper.DtFabricHelper,),
+            {"_DEFINITION_FILE": path},
+        )
+        return helper_class()
+
     def testFormatPackedIPv4Address(self):
         """Tests the _FormatPackedIPv4Address function."""
         test_helper = dtfabric_helper.DtFabricHelper()
@@ -138,7 +155,53 @@ members:
         )
         self.assertEqual(ip_address, "2001:0db8:0000:0000:0000:ff00:0042:8329")
 
-    # TODO: add tests for _GetDataTypeMap
+    def testInitialize(self):
+        """Tests the __init__ function."""
+        with test_lib.TempDirectory() as temp_directory:
+            path = os.path.join(temp_directory, "dtfabric.yaml")
+            with open(path, "wb") as file_object:
+                file_object.write(self._DATA_TYPE_FABRIC_DEFINITION)
+
+            test_helper = self._CreateTestHelper(path)
+
+        self.assertEqual(test_helper._definition, self._DATA_TYPE_FABRIC_DEFINITION)
+        self.assertIsNone(test_helper._fabric)
+
+        # Test with missing definition file.
+        with test_lib.TempDirectory() as temp_directory:
+            path = os.path.join(temp_directory, "missing.yaml")
+
+            with self.assertRaises(OSError):
+                self._CreateTestHelper(path)
+
+    def testGetDataTypeMap(self):
+        """Tests the _GetDataTypeMap function."""
+        with test_lib.TempDirectory() as temp_directory:
+            path = os.path.join(temp_directory, "dtfabric.yaml")
+            with open(path, "wb") as file_object:
+                file_object.write(self._DATA_TYPE_FABRIC_DEFINITION)
+
+            test_helper = self._CreateTestHelper(path)
+
+        data_type_map = test_helper._GetDataTypeMap("point3d")
+        self.assertIsNotNone(data_type_map)
+        self.assertIsNotNone(test_helper._fabric)
+
+        point3d = data_type_map.MapByteStream(
+            b"\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00"
+        )
+        self.assertEqual(point3d.x, 1)
+        self.assertEqual(point3d.y, 2)
+        self.assertEqual(point3d.z, 3)
+
+        fabric = test_helper._fabric
+
+        cached_data_type_map = test_helper._GetDataTypeMap("point3d")
+        self.assertIs(cached_data_type_map, data_type_map)
+
+        data_type_map = test_helper._GetDataTypeMap("shape3d")
+        self.assertIsNotNone(data_type_map)
+        self.assertIs(test_helper._fabric, fabric)
 
     def testReadData(self):
         """Tests the _ReadData function."""
@@ -164,7 +227,27 @@ members:
         with self.assertRaises(errors.ParseError):
             test_helper._ReadData(file_object, 0, 12)
 
-    # TODO: add tests for _ReadDefinitionFile
+    def testReadDefinitionFile(self):
+        """Tests the _ReadDefinitionFile function."""
+        test_helper = dtfabric_helper.DtFabricHelper()
+
+        with test_lib.TempDirectory() as temp_directory:
+            path = os.path.join(temp_directory, "dtfabric.yaml")
+            with open(path, "wb") as file_object:
+                file_object.write(self._DATA_TYPE_FABRIC_DEFINITION)
+
+            definition = test_helper._ReadDefinitionFile(path)
+            self.assertEqual(definition, self._DATA_TYPE_FABRIC_DEFINITION)
+
+            # Test with missing definition file.
+            path = os.path.join(temp_directory, "missing.yaml")
+
+            with self.assertRaises(OSError):
+                test_helper._ReadDefinitionFile(path)
+
+        # Test without a path.
+        definition = test_helper._ReadDefinitionFile(None)
+        self.assertIsNone(definition)
 
     def testReadStructureFromByteStream(self):
         """Tests the _ReadStructureFromByteStream function."""
