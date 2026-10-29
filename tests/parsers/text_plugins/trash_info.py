@@ -55,8 +55,7 @@ class TrashInfoTextPluginTest(test_lib.TextPluginTestCase):
 
         # Check a desktop entry file, which has a similar format.
         result = self._CheckRequiredFormat(
-            plugin,
-            b"[Desktop Entry]\n" b"Type=Application\n" b"Path=/home/user\n",
+            plugin, b"[Desktop Entry]\nType=Application\nPath=/home/user\n"
         )
         self.assertFalse(result)
 
@@ -71,14 +70,12 @@ class TrashInfoTextPluginTest(test_lib.TextPluginTestCase):
         self.assertFalse(result)
 
         # Check a file with a Trash info group without Path or DeletionDate.
-        result = self._CheckRequiredFormat(
-            plugin, b"[Trash Info]\n" b"Name=notes.txt\n"
-        )
+        result = self._CheckRequiredFormat(plugin, b"[Trash Info]\nName=notes.txt\n")
         self.assertFalse(result)
 
         # Check a file with a deletion date in an unsupported format.
         result = self._CheckRequiredFormat(
-            plugin, b"[Trash Info]\n" b"DeletionDate=19/08/2022 14:05:31\n"
+            plugin, b"[Trash Info]\nDeletionDate=19/08/2022 14:05:31\n"
         )
         self.assertFalse(result)
 
