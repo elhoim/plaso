@@ -4,6 +4,7 @@
 import io
 import unittest
 
+from plaso.lib import errors
 from plaso.parsers import dsv_parser
 
 from tests.parsers import test_lib
@@ -116,6 +117,85 @@ class DSVParserTest(test_lib.ParserTestCase):
         self.assertEqual(row["place"], "bank")
         self.assertEqual(row["user"], "joesmith")
         self.assertEqual(row["password"], "superrich")
+
+    def testCheckFirstRowInSampleData(self):
+        """Tests the _CheckFirstRowInSampleData function."""
+        parser = TestDSVParser()
+        storage_writer = self._CreateStorageWriter()
+        test_file_entry = self._GetTestFileEntry(["password.csv"])
+        parser_mediator = self._CreateParserMediator(
+            storage_writer, file_entry=test_file_entry
+        )
+
+        test_file_object = self._CreateFileObject(
+            "first_row.csv", b"place,user,password\nbank,joesmith,superrich\n"
+        )
+        parser._CheckFirstRowInSampleData(parser_mediator, test_file_object, "utf-8")
+
+        # Near-miss first rows that must not match.
+        for data in (
+            b"place,user,password\nbank,joesmith\n",
+            b"place,user,password\nbank,joesmith,superrich,extra\n",
+            b"place,user,password\nbank,\xff,superrich\n",
+            b"place,user,password\nbank\r,joesmith,superrich\n",
+        ):
+            test_file_object = self._CreateFileObject("first_row.csv", data)
+            with self.assertRaises(errors.WrongParser):
+                parser._CheckFirstRowInSampleData(
+                    parser_mediator, test_file_object, "utf-8"
+                )
+
+        # The first row is not complete in the sample data and is left to the line
+        # reader.
+        for data in (
+            b"place,user,password",
+            b"place,user,password\n",
+            b"place,user,password\nbank,joesmith",
+            b'place,user,password\n"bank\n',
+        ):
+            test_file_object = self._CreateFileObject("first_row.csv", data)
+            parser._CheckFirstRowInSampleData(
+                parser_mediator, test_file_object, "utf-8"
+            )
+
+    def testParseFileObjectWithFirstRowBeyondSampleData(self):
+        """Tests the ParseFileObject function with a long first row."""
+        parser = TestDSVParser()
+        storage_writer = self._CreateStorageWriter()
+        test_file_entry = self._GetTestFileEntry(["password.csv"])
+        parser_mediator = self._CreateParserMediator(
+            storage_writer, file_entry=test_file_entry
+        )
+
+        long_value = b"a" * parser._SAMPLE_DATA_SIZE
+        test_file_object = self._CreateFileObject(
+            "long_row.csv",
+            b"".join([b"place,user,password\nbank,joesmith,", long_value, b"\n"]),
+        )
+        parser.ParseFileObject(parser_mediator, test_file_object)
+
+        self.assertEqual(len(parser.rows), 1)
+        self.assertEqual(parser.row_offsets, [20])
+        self.assertEqual(len(parser.rows[0]["password"]), parser._SAMPLE_DATA_SIZE)
+
+    def testReadCompleteLinesInSampleData(self):
+        """Tests the _ReadCompleteLinesInSampleData function."""
+        parser = TestDSVParser()
+
+        sample_line_reader = parser._ReadCompleteLinesInSampleData(
+            b"\xef\xbb\xbfplace,user\nbank,joesmith\nincomplete", "utf-8"
+        )
+        self.assertEqual(next(sample_line_reader), "place,user\n")
+        self.assertEqual(next(sample_line_reader), "bank,joesmith\n")
+        with self.assertRaises(dsv_parser._InsufficientSampleDataError):
+            next(sample_line_reader)
+
+        sample_line_reader = parser._ReadCompleteLinesInSampleData(
+            b"place,user\n\xff\n", "utf-8"
+        )
+        self.assertEqual(next(sample_line_reader), "place,user\n")
+        with self.assertRaises(UnicodeDecodeError):
+            next(sample_line_reader)
 
     def testHasExpectedLineLength(self):
         """Tests the _HasExpectedLineLength function."""
