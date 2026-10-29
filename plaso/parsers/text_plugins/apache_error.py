@@ -187,14 +187,14 @@ class ApacheErrorLogTextPlugin(interface.TextPlugin):
         """
         time_elements_structure = self._GetValueFromStructure(structure, "date_time")
 
-        message_body = self._GetStringValueFromStructure(structure, "message_body")
-
         event_data = ApacheErrorLogEventData()
         event_data.client_address = self._GetValueFromStructure(
             structure, "client_address"
         )
         event_data.level = self._GetValueFromStructure(structure, "level")
-        event_data.message_body = message_body or None
+        event_data.message_body = self._GetStringValueFromStructure(
+            structure, "message_body"
+        )
         event_data.module = self._GetValueFromStructure(structure, "module")
         event_data.process_identifier = self._GetValueFromStructure(
             structure, "process_identifier"

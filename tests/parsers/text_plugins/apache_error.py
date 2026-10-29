@@ -48,7 +48,7 @@ class ApacheErrorLogTextPluginTest(test_lib.TextPluginTestCase):
 
         # Check that an Apache access log line does not match.
         result = self._CheckRequiredFormat(
-            b'192.0.2.5 - - [07/Oct/2025:11:02:13 +0200] "GET / HTTP/1.1" 200 ' b"512\n"
+            b'192.0.2.5 - - [07/Oct/2025:11:02:13 +0200] "GET / HTTP/1.1" 200 512\n'
         )
         self.assertFalse(result)
 
@@ -123,7 +123,7 @@ class ApacheErrorLogTextPluginTest(test_lib.TextPluginTestCase):
             "data_type": "apache:error_log:entry",
             "level": "error",
             "message_body": (
-                "AH01630: client denied by server configuration: " "/var/www/html/admin"
+                "AH01630: client denied by server configuration: /var/www/html/admin"
             ),
             "module": "authz_core",
             "process_identifier": 1188,
