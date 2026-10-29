@@ -60,7 +60,9 @@ Test argument parser.
     def testParseOptions(self):
         """Tests the ParseOptions function."""
         options = cli_test_lib.TestOptions()
-        options.file_filter = self._GetTestFilePath(["testdir", "filter2.txt"])
+        options.file_filter = self._GetTestFilePath(
+            ["filter_files", "format_test.yaml"]
+        )
 
         test_tool = tools.CLITool()
         filter_file.FilterFileArgumentsHelper.ParseOptions(options, test_tool)
@@ -69,6 +71,12 @@ Test argument parser.
 
         with self.assertRaises(errors.BadConfigObject):
             filter_file.FilterFileArgumentsHelper.ParseOptions(options, None)
+
+        # Test with a filter file that is not a YAML-based filter file.
+        options.file_filter = self._GetTestFilePath(["testdir", "filter2.txt"])
+
+        with self.assertRaises(errors.BadConfigOption):
+            filter_file.FilterFileArgumentsHelper.ParseOptions(options, test_tool)
 
         # TODO: improve test coverage.
 
