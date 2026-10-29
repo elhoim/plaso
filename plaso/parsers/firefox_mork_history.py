@@ -56,6 +56,8 @@ class MorkReader:
       rows (dict[str, dict[str, bytes]]): cells of the rows, per row identifier.
     """
 
+    _COLUMN_NAME_RE = re.compile(r"[^\^=)]*")
+
     _COMMENT_START = "//"
 
     _GROUP_ABORT = "@$$}~~}@"
@@ -64,7 +66,7 @@ class MorkReader:
 
     _GROUP_START = "@$${"
 
-    _HEXADECIMAL_DIGITS = frozenset("0123456789ABCDEFabcdef")
+    _HEXADECIMAL_RE = re.compile(r"[0-9A-Fa-f]{2}")
 
     _IDENTIFIER_RE = re.compile(r"[^\s()\[\]{}<>]*")
 
@@ -246,10 +248,7 @@ class MorkReader:
 
             if character == "$":
                 hexadecimal_text = self._text[position + 1 : position + 3]
-                if len(hexadecimal_text) != 2 or not all(
-                    hexadecimal_character in self._HEXADECIMAL_DIGITS
-                    for hexadecimal_character in hexadecimal_text
-                ):
+                if not self._HEXADECIMAL_RE.fullmatch(hexadecimal_text):
                     raise ValueError(
                         f"invalid hexadecimal escape at offset: {position:d}"
                     )
@@ -341,11 +340,7 @@ class MorkReader:
         if is_column_reference:
             position += 1
 
-        end_of_column = position
-        text_size = len(self._text)
-        while end_of_column < text_size and self._text[end_of_column] not in "^=)":
-            end_of_column += 1
-
+        end_of_column = self._COLUMN_NAME_RE.match(self._text, position).end()
         column_name = self._text[position:end_of_column].strip()
         if is_column_reference:
             column_name = self._columns.get(column_name.upper(), b"").decode(
