@@ -468,10 +468,7 @@ class PsortTool(analysis_tool.AnalysisTool, tool_options.OutputModuleOptions):
         self._ParseInformationalOptions(options)
 
         helpers_manager.ArgumentHelperManager.ParseOptions(
-            options, self, names=["data_location"]
-        )
-        helpers_manager.ArgumentHelperManager.ParseOptions(
-            options, self, names=["log_file"]
+            options, self, names=["data_location", "log_file"]
         )
 
         self._ParseProcessingOptions(options)

@@ -328,12 +328,14 @@ class PstealTool(
 
         self._ParseInformationalOptions(options)
 
-        argument_helper_names = ["artifact_definitions", "extraction", "status_view"]
+        argument_helper_names = [
+            "artifact_definitions",
+            "extraction",
+            "log_file",
+            "status_view",
+        ]
         helpers_manager.ArgumentHelperManager.ParseOptions(
             options, self, names=argument_helper_names
-        )
-        helpers_manager.ArgumentHelperManager.ParseOptions(
-            options, self, names=["log_file"]
         )
 
         self._ParseStorageMediaOptions(options)
