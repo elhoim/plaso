@@ -8,7 +8,6 @@ from artifacts import registry as artifacts_registry
 
 from plaso.preprocessors import interface
 from plaso.preprocessors import manager
-from plaso.preprocessors import windows  # pylint: disable=unused-import
 
 from tests import test_lib as shared_test_lib
 
