@@ -133,6 +133,65 @@ class DSVParserTest(test_lib.ParserTestCase):
             parser._HasExpectedLineLength(test_file_object, encoding="utf-8")
         )
 
+        # Only the first 20 lines after the header lines are checked.
+        parser = TestDSVParser()
+        long_line = b"a" * (parser._maximum_line_length + 1)
+        short_lines = b"place,user,password\n" * 21
+
+        test_file_object = self._CreateFileObject(
+            "long_line.csv", b"".join([short_lines, long_line])
+        )
+        self.assertTrue(
+            parser._HasExpectedLineLength(test_file_object, encoding="utf-8")
+        )
+
+        test_file_object = self._CreateFileObject(
+            "long_line.csv", b"".join([short_lines[:200], long_line])
+        )
+        self.assertFalse(
+            parser._HasExpectedLineLength(test_file_object, encoding="utf-8")
+        )
+
+        test_file_object = self._CreateFileObject(
+            "long_line.csv", b"".join([short_lines[:200], b"\xff\n", long_line])
+        )
+        with self.assertRaises(UnicodeDecodeError):
+            parser._HasExpectedLineLength(test_file_object, encoding="utf-8")
+
+    def testHasExpectedLineLengthInSampleData(self):
+        """Tests the _HasExpectedLineLengthInSampleData function."""
+        parser = TestDSVParser()
+        short_lines = b"place,user,password\n" * 21
+
+        test_file_object = self._CreateFileObject("short_lines.csv", short_lines)
+        result = parser._HasExpectedLineLengthInSampleData(test_file_object, "utf-8")
+        self.assertTrue(result)
+
+        # Lines after the first 20 lines after the header lines are not read.
+        test_file_object = self._CreateFileObject(
+            "short_lines.csv", b"".join([short_lines, b"\xff\n"])
+        )
+        result = parser._HasExpectedLineLengthInSampleData(test_file_object, "utf-8")
+        self.assertTrue(result)
+
+        test_file_object = self._CreateFileObject(
+            "short_lines.csv", b"".join([b"\xff\n", short_lines])
+        )
+        with self.assertRaises(UnicodeDecodeError):
+            parser._HasExpectedLineLengthInSampleData(test_file_object, "utf-8")
+
+        # The sample data contains less than 20 lines after the header lines.
+        test_file_object = self._CreateFileObject("short_lines.csv", short_lines[:200])
+        result = parser._HasExpectedLineLengthInSampleData(test_file_object, "utf-8")
+        self.assertIsNone(result)
+
+        long_line = b"a" * parser._SAMPLE_DATA_SIZE
+        test_file_object = self._CreateFileObject(
+            "long_line.csv", b"".join([long_line, short_lines])
+        )
+        result = parser._HasExpectedLineLengthInSampleData(test_file_object, "utf-8")
+        self.assertIsNone(result)
+
 
 if __name__ == "__main__":
     unittest.main()

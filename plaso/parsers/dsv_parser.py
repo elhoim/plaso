@@ -44,6 +44,13 @@ class DSVParser(interface.FileObjectParser):
 
     _ENCODING = None
 
+    # Number of lines, after the header lines, of which the line length is checked.
+    _NUMBER_OF_SAMPLE_LINES = 20
+
+    # Size of the data at the start of the file that is used to check the line length
+    # before falling back to reading data of the maximum line length.
+    _SAMPLE_DATA_SIZE = 65536
+
     def __init__(self):
         """Initializes a delimiter separated values (DSV) parser."""
         super().__init__()
@@ -139,20 +146,73 @@ class DSVParser(interface.FileObjectParser):
           bool: True if the file has lines of the expected length.
         """
         original_file_position = file_object.tell()
-        result = True
 
-        # Attempt to read a line that is longer than any line that should be in the
-        # file.
-        line_reader = self._CreateLineReader(file_object, encoding=encoding)
+        result = self._HasExpectedLineLengthInSampleData(file_object, encoding)
+        if result is None:
+            result = True
 
-        for _ in range(0, 20):
-            sample_line = line_reader.readline(self._maximum_line_length + 1)
-            if len(sample_line) > self._maximum_line_length:
-                result = False
-                break
+            # Attempt to read a line that is longer than any line that should be in
+            # the file.
+            line_reader = self._CreateLineReader(file_object, encoding=encoding)
+
+            for _ in range(0, self._NUMBER_OF_SAMPLE_LINES):
+                sample_line = line_reader.readline(self._maximum_line_length + 1)
+                if len(sample_line) > self._maximum_line_length:
+                    result = False
+                    break
 
         file_object.seek(original_file_position, os.SEEK_SET)
         return result
+
+    def _HasExpectedLineLengthInSampleData(self, file_object, encoding):
+        """Determines if the sample data begins with lines of the expected length.
+
+        Reading data of the maximum line length, which can be several MiB, is costly
+        when most files are not DSV files. This function checks the same lines as
+        the line reader would, but only the complete lines in the sample data at the
+        start of the file.
+
+        Args:
+          file_object (dfvfs.FileIO): file-like object.
+          encoding (str): encoding used in the DSV file.
+
+        Returns:
+          bool: True if the file has lines of the expected length or None if
+              the sample data does not contain enough complete lines to determine
+              this.
+
+        Raises:
+          UnicodeDecodeError: if a line cannot be read with the specified encoding.
+        """
+        # pylint: disable=protected-access
+        maximum_read_buffer_size = text_file.TextFile._MAXIMUM_READ_BUFFER_SIZE
+
+        if self._maximum_line_length > maximum_read_buffer_size:
+            self._maximum_line_length = maximum_read_buffer_size - 1
+
+        end_of_line = self._end_of_line.encode(encoding)
+        number_of_lines = self.NUMBER_OF_HEADER_LINES + self._NUMBER_OF_SAMPLE_LINES
+
+        # The sample data size must not exceed the maximum line length so that the
+        # complete lines in the sample data are the lines the line reader returns.
+        sample_data_size = min(self._SAMPLE_DATA_SIZE, self._maximum_line_length)
+
+        # The line reader also reads from the start of the file.
+        file_object.seek(0, os.SEEK_SET)
+        sample_data = file_object.read(sample_data_size)
+
+        # The last value contains the remaining data, which is not a complete line.
+        lines = sample_data.split(end_of_line, number_of_lines)
+
+        # A complete line in the sample data is not longer than the maximum line
+        # length, but decoding it can fail as it would in the line reader.
+        for line in lines[:-1]:
+            b"".join([line, end_of_line]).decode(encoding)
+
+        if len(lines) > number_of_lines:
+            return True
+
+        return None
 
     def _CheckForByteOrderMark(self, file_object):
         """Check if the file contains a byte-order-mark (BOM).
