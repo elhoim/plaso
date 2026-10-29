@@ -348,15 +348,13 @@ class Log2TimelineTool(extraction_tool.ExtractionTool):
             "artifact_filters",
             "extraction",
             "filter_file",
+            "log_file",
             "status_view",
             "storage_format",
             "yara_rules",
         ]
         helpers_manager.ArgumentHelperManager.ParseOptions(
             options, self, names=argument_helper_names
-        )
-        helpers_manager.ArgumentHelperManager.ParseOptions(
-            options, self, names=["log_file"]
         )
 
         self._ParseStorageMediaOptions(options)
