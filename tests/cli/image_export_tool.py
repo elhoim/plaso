@@ -1163,9 +1163,7 @@ class ImageExportToolTest(test_lib.CLIToolTestCase):
                 "",
             ]
         )
-        extracted_files, hashes_paths = self._ProcessSourceWithFilterFile(
-            filter_file_data
-        )
+        extracted_files, _ = self._ProcessSourceWithFilterFile(filter_file_data)
 
         expected_extracted_files = sorted(
             [

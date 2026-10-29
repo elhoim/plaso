@@ -505,10 +505,11 @@ class ImageExportTool(storage_media_tool.StorageMediaTool):
                     processed_path_specs,
                     skip_duplicates=skip_duplicates,
                 )
-                if not include_directory_contents or not file_entry:
-                    continue
-
-                if not file_entry.IsDirectory():
+                if (
+                    not include_directory_contents
+                    or not file_entry
+                    or not file_entry.IsDirectory()
+                ):
                     continue
 
                 sub_path_spec_generator = self._path_spec_extractor.ExtractPathSpecs(
