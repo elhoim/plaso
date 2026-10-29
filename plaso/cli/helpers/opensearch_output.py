@@ -153,7 +153,6 @@ class OpenSearchOutputArgumentsHelper(interface.ArgumentsHelper):
             "--no-ssl",
             dest="use_ssl",
             action="store_false",
-            default=True,
             help="Disables use of SSL/TLS.",
         )
 
