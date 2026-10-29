@@ -14,14 +14,16 @@ This rule tags application execution events on Linux, which are defined as:
 
 * a command from bash history
 * a Docker file system layer event
-* a SELinux log line where the audit type is "EXECVE"
+* a command from fish history
+* a SELinux log line where the audit type is "EXECVE" or "USER_CMD"
 * a command from zsh history
 * a syslog line that indicates a cron task was run, for example:
 ```
 Mar 11 00:00:00 ubuntu2015 CRON[3]: (root) CMD (touch /tmp/afile.txt)
 ```
 
-* a syslog line that contains "COMMAND="
+* a syslog line from sudo that contains "COMMAND="
+* a syslog line from CROND that contains "CMD"
 
 ### login
 
