@@ -562,7 +562,7 @@ class NTFSUsnJrnlParser(interface.FileObjectParser, dtfabric_helper.DtFabricHelp
           offset (int): offset of the USN record.
         """
         # Per MSDN we need to use name offset for forward compatibility.
-        name_offset = usn_record.name_offset - 60
+        name_offset = usn_record.name_offset - self._USN_RECORD_V2_HEADER_SIZE
         ucs2_stream = usn_record.name[name_offset : usn_record.name_size]
 
         corrupted = False
