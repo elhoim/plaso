@@ -173,6 +173,7 @@ File System Format support is provided by [dfVFS](https://dfvfs.readthedocs.io/e
 * OneDrive (or SkyDrive) version 2 log file
 * Popularity Contest log file
 * PostgreSQL application log file
+* Samba log file
 * Santa log (santa.log) file
 * SELinux audit log (audit.log) file
 * Snort3/Suricata fast-log alert log (fast.log) file
