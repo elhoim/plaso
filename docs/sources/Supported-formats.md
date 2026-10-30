@@ -25,6 +25,7 @@ File System Format support is provided by [dfVFS](https://dfvfs.readthedocs.io/e
 * CUPS IPP
 * [Extensible Storage Engine (ESE) Database File (EDB) format](https://forensics.wiki/extensible_storage_engine_(ese)_database_file_(edb)_format) using [libesedb](https://github.com/libyal/libesedb)
 * Firefox Cache
+* GTK recently used (recently-used.xbel) file
 * [Java WebStart IDX](https://forensics.wiki/java)
 * [Jump Lists](https://forensics.wiki/jump_lists) .customdestinations-ms files
 * [MacOS Keychain](https://github.com/libyal/dtformats/blob/main/documentation/MacOS%20keychain%20database%20file%20format.asciidoc)
