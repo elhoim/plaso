@@ -66,15 +66,6 @@ Test argument parser.
 
         test_tool._ParseInformationalOptions(options)
 
-    def testParseLogFileOptions(self):
-        """Tests the _ParseLogFileOptions function."""
-        test_tool = tools.CLITool()
-
-        options = test_lib.TestOptions()
-        options.log_file = "file.log"
-
-        test_tool._ParseLogFileOptions(options)
-
     # TODO: add test for _PromptUserForInput
 
     def testAddBasicOptions(self):
@@ -96,8 +87,6 @@ Test argument parser.
 
         output = self._RunArgparseFormatHelp(argument_parser)
         self.assertEqual(output, self._EXPECTED_INFORMATIONAL_OPTIONS)
-
-    # TODO: add test for AddLogFileOptions
 
     def testCheckOutDated(self):
         """Tests the CheckOutDated function."""
