@@ -1095,6 +1095,155 @@ class ImageExportToolTest(test_lib.CLIToolTestCase):
 
         self.assertEqual(sorted(extracted_files), expected_extracted_files)
 
+    def _ProcessSourceWithFilterFile(self, filter_file_data, include_duplicates=False):
+        """Exports files from image.qcow2 with a filter file.
+
+        Args:
+          filter_file_data (str): data of the filter file.
+          include_duplicates (Optional[bool]): True if files with duplicate
+              content should be exported.
+
+        Returns:
+          tuple[list[str], list[str]]: sorted relative paths of the exported files
+              and directories, excluding the filter and hashes files, and sorted
+              paths stored in the hashes file.
+        """
+        test_artifacts_path = self._GetTestFilePath(["artifacts"])
+        self._SkipIfPathNotExists(test_artifacts_path)
+
+        test_file_path = self._GetTestFilePath(["image.qcow2"])
+        self._SkipIfPathNotExists(test_file_path)
+
+        output_writer = test_lib.TestOutputWriter(encoding="utf-8")
+        test_tool = image_export_tool.ImageExportTool(output_writer=output_writer)
+
+        options = test_lib.TestOptions()
+        options.artifact_definitions_path = test_artifacts_path
+        options.image = test_file_path
+        options.include_duplicates = include_duplicates
+        options.quiet = True
+
+        with shared_test_lib.TempDirectory() as temp_directory:
+            filter_file = os.path.join(temp_directory, "filter_file.yaml")
+            with open(filter_file, "wt", encoding="utf-8") as file_object:
+                file_object.write(filter_file_data)
+
+            options.file_filter = filter_file
+            options.path = temp_directory
+
+            test_tool.ParseOptions(options)
+
+            test_tool.ProcessSource()
+
+            extracted_files = [
+                os.path.relpath(path, temp_directory)
+                for path in self._RecursiveList(temp_directory)
+            ]
+
+            hashes_file_path = os.path.join(temp_directory, "hashes.json")
+            with open(hashes_file_path, "r", encoding="utf-8") as file_object:
+                hashes = json.load(file_object)
+
+        extracted_files = [
+            path
+            for path in extracted_files
+            if path not in ("filter_file.yaml", "hashes.json")
+        ]
+        hashes_paths = [path for entry in hashes for path in entry["paths"]]
+
+        return sorted(extracted_files), sorted(hashes_paths)
+
+    def testProcessSourceExtractWithDirectoryFilter(self):
+        """Tests the ProcessSource function with a directory in a filter file."""
+        filter_file_data = "\n".join(
+            [
+                "description: Test filter.",
+                "type: include",
+                "paths: ['/a_directory']",
+                "",
+            ]
+        )
+        extracted_files, _ = self._ProcessSourceWithFilterFile(filter_file_data)
+
+        expected_extracted_files = sorted(
+            [
+                "a_directory",
+                os.path.join("a_directory", "a_file"),
+                os.path.join("a_directory", "another_file"),
+            ]
+        )
+        self.assertEqual(extracted_files, expected_extracted_files)
+
+        # Test with a path that is a prefix of the directory name but not a
+        # directory itself.
+        filter_file_data = "\n".join(
+            [
+                "description: Test filter.",
+                "type: include",
+                "paths: ['/a_dir']",
+                "",
+            ]
+        )
+        extracted_files, hashes_paths = self._ProcessSourceWithFilterFile(
+            filter_file_data
+        )
+
+        self.assertEqual(extracted_files, [])
+        self.assertEqual(hashes_paths, [])
+
+    def testProcessSourceExtractWithDirectoryAndExclusionFilter(self):
+        """Tests the ProcessSource function with a directory and an exclusion."""
+        filter_file_data = "\n".join(
+            [
+                "description: Test filter.",
+                "type: include",
+                "paths: ['/a_directory']",
+                "---",
+                "description: Test exclusion filter.",
+                "type: exclude",
+                "paths: ['/a_directory/a_file']",
+                "",
+            ]
+        )
+        extracted_files, _ = self._ProcessSourceWithFilterFile(filter_file_data)
+
+        expected_extracted_files = sorted(
+            ["a_directory", os.path.join("a_directory", "another_file")]
+        )
+        self.assertEqual(extracted_files, expected_extracted_files)
+
+    def testProcessSourceExtractWithOverlappingFilter(self):
+        """Tests the ProcessSource function with overlapping filter paths."""
+        filter_file_data = "\n".join(
+            [
+                "description: Test filter.",
+                "type: include",
+                "paths: ['/a_directory', '/a_directory/a_file']",
+                "",
+            ]
+        )
+        extracted_files, hashes_paths = self._ProcessSourceWithFilterFile(
+            filter_file_data, include_duplicates=True
+        )
+
+        expected_extracted_files = sorted(
+            [
+                "a_directory",
+                os.path.join("a_directory", "a_file"),
+                os.path.join("a_directory", "another_file"),
+            ]
+        )
+        self.assertEqual(extracted_files, expected_extracted_files)
+
+        # Every file is exported only once.
+        expected_hashes_paths = sorted(
+            [
+                os.path.join("a_directory", "a_file"),
+                os.path.join("a_directory", "another_file"),
+            ]
+        )
+        self.assertEqual(hashes_paths, expected_hashes_paths)
+
     def testProcessSourceExtractWithArtifactsFilter(self):
         """Tests the ProcessSource function with a artifacts filter file."""
         test_artifacts_path = self._GetTestFilePath(["artifacts"])
