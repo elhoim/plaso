@@ -55,13 +55,17 @@ Test argument parser.
             _EXPECTED_PROCESSING_OPTIONS = f"""\
 usage: extraction_tool_test.py [--single_process]
                                [--temporary_directory DIRECTORY]
-                               [--vfs_back_end TYPE]
+                               [--vfs_back_end TYPE] [--no_worker_replacement]
                                [--worker_memory_limit SIZE]
                                [--worker_timeout MINUTES] [--workers WORKERS]
 
 Test argument parser.
 
 {test_lib.ARGPARSE_OPTIONS}:
+  --no_worker_replacement, --no-worker-replacement
+                        Do not replace a worker process that is killed or not
+                        functioning correctly, for example when debugging a
+                        worker process.
   --single_process, --single-process
                         Indicate that the tool should run in a single process.
   --temporary_directory, --temporary-directory DIRECTORY
@@ -90,13 +94,17 @@ Test argument parser.
             _EXPECTED_PROCESSING_OPTIONS = f"""\
 usage: extraction_tool_test.py [--single_process]
                                [--temporary_directory DIRECTORY]
-                               [--vfs_back_end TYPE]
+                               [--vfs_back_end TYPE] [--no_worker_replacement]
                                [--worker_memory_limit SIZE]
                                [--worker_timeout MINUTES] [--workers WORKERS]
 
 Test argument parser.
 
 {test_lib.ARGPARSE_OPTIONS}:
+  --no_worker_replacement, --no-worker-replacement
+                        Do not replace a worker process that is killed or not
+                        functioning correctly, for example when debugging a
+                        worker process.
   --single_process, --single-process
                         Indicate that the tool should run in a single process.
   --temporary_directory DIRECTORY, --temporary-directory DIRECTORY
@@ -127,13 +135,17 @@ Test argument parser.
 usage: extraction_tool_test.py [--single_process]
                                [--process_memory_limit SIZE]
                                [--temporary_directory DIRECTORY]
-                               [--vfs_back_end TYPE]
+                               [--vfs_back_end TYPE] [--no_worker_replacement]
                                [--worker_memory_limit SIZE]
                                [--worker_timeout MINUTES] [--workers WORKERS]
 
 Test argument parser.
 
 {test_lib.ARGPARSE_OPTIONS}:
+  --no_worker_replacement, --no-worker-replacement
+                        Do not replace a worker process that is killed or not
+                        functioning correctly, for example when debugging a
+                        worker process.
   --process_memory_limit, --process-memory-limit SIZE
                         Maximum amount of memory (data segment) a process is
                         allowed to allocate in bytes, where 0 represents no
@@ -171,13 +183,17 @@ Test argument parser.
 usage: extraction_tool_test.py [--single_process]
                                [--process_memory_limit SIZE]
                                [--temporary_directory DIRECTORY]
-                               [--vfs_back_end TYPE]
+                               [--vfs_back_end TYPE] [--no_worker_replacement]
                                [--worker_memory_limit SIZE]
                                [--worker_timeout MINUTES] [--workers WORKERS]
 
 Test argument parser.
 
 {test_lib.ARGPARSE_OPTIONS}:
+  --no_worker_replacement, --no-worker-replacement
+                        Do not replace a worker process that is killed or not
+                        functioning correctly, for example when debugging a
+                        worker process.
   --process_memory_limit SIZE, --process-memory-limit SIZE
                         Maximum amount of memory (data segment) a process is
                         allowed to allocate in bytes, where 0 represents no
