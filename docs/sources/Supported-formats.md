@@ -155,6 +155,7 @@ File System Format support is provided by [dfVFS](https://dfvfs.readthedocs.io/e
 * Advanced Packaging Tool (APT) History log file
 * Android logcat file
 * Apache access log (access.log) file
+* Apache error log (error.log) file
 * [AWS ELB Access log file](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html#access-log-file-format)
 * Bash history file
 * Confluence access log (access.log) file
