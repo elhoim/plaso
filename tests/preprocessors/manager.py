@@ -55,7 +55,7 @@ class TestKnowledgeBasePreprocessorPlugin(interface.KnowledgeBasePreprocessorPlu
         super().__init__()
         self.DEPENDENCIES = frozenset(dependencies)  # pylint: disable=invalid-name
 
-    # pylint: disable=unused-argument
+    # pylint: disable=redefined-outer-name,unused-argument
     def Collect(self, mediator):
         """Collects values from the knowledge base.
 
