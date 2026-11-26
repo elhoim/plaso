@@ -55,6 +55,7 @@ utmp | Parser for Linux libc6 utmp files.
 utmpx | Parser for Mac OS X 10.5 utmpx files.
 wincc_sys | Parser for WinCC Sys Log files.
 windefender_history | Parser for Windows Defender scan DetectionHistory files.
+windows_bootstat | Parser for Windows boot status data (bootstat.dat) files.
 winevt | Parser for Windows EventLog (EVT) files.
 winevtx | Parser for Windows XML EventLog (EVTX) files.
 winjob | Parser for Windows Scheduled Task job (or at-job) files.
@@ -306,7 +307,7 @@ linux | bencode, czip/oxml, jsonl/docker_container_config, jsonl/docker_containe
 macos | asl_log, bencode, bsm_log, cups_ipp, czip/oxml, filestat, fseventsd, mac_keychain, olecf, plist, spotlight_storedb, sqlite/appusage, sqlite/google_drive, sqlite/imessage, sqlite/ls_quarantine, sqlite/mac_document_versions, sqlite/mac_notes, sqlite/mackeeper_cache, sqlite/mac_knowledgec, sqlite/skype, text/bash_history, text/gdrive_synclog, text/mac_appfirewall_log, text/mac_securityd, text/mac_wifi, text/macos_launchd_log, text/syslog, text/syslog_traditional, text/zsh_extended_history, utmpx, webhist
 mactime | bodyfile
 webhist | binary_cookies, chrome_cache, chrome_preferences, esedb/msie_webcache, firefox_cache, java_idx, msiecf, opera_global, opera_typed_history, plist/safari_history, sqlite/chrome_8_history, sqlite/chrome_17_cookies, sqlite/chrome_27_history, sqlite/chrome_66_cookies, sqlite/chrome_autofill, sqlite/chrome_extension_activity, sqlite/firefox_2_cookies, sqlite/firefox_10_cookies, sqlite/firefox_downloads, sqlite/firefox_history, sqlite/safari_historydb
-win7 | custom_destinations, esedb/file_history, esedb/user_access_logging, olecf/olecf_automatic_destinations, recycle_bin, text/powershell_transcript, winevtx, win_gen, winpca_db0, winpca_dic
+win7 | custom_destinations, esedb/file_history, esedb/user_access_logging, olecf/olecf_automatic_destinations, recycle_bin, text/powershell_transcript, winevtx, win_gen, windows_bootstat, winpca_db0, winpca_dic
 win7_slow | esedb, mft, win7
 win_gen | bencode, czip/oxml, filestat, lnk, mcafee_protection, olecf, pe, prefetch, sqlite/google_drive, sqlite/skype, symantec_scanlog, text/gdrive_synclog, text/sccm, text/setupapi, text/skydrive_log_v1, text/skydrive_log_v2, text/teamviewer_application_log, text/teamviewer_connections_incoming, text/teamviewer_connections_outgoing, text/winfirewall, usnjrnl, webhist, winjob, winreg
 winxp | recycle_bin_info2, rplog, win_gen, winevt

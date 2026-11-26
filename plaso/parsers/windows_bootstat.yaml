@@ -1,0 +1,101 @@
+# dtFabric format specification.
+---
+name: windows_bootstat
+type: format
+description: Windows boot status data (bootstat.dat) file format
+urls: ["https://github.com/gtworek/PSBits/blob/37f0e880ee7428429673ccd7cb1b8baf9c132b17/DFIR/Extract-BootTimes.ps1"]
+---
+name: uint16
+type: integer
+attributes:
+  format: unsigned
+  size: 2
+  units: bytes
+---
+name: uint32
+type: integer
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: uint64
+type: integer
+attributes:
+  format: unsigned
+  size: 8
+  units: bytes
+---
+name: bootstat_boot_log_header
+type: structure
+description: Boot log header.
+attributes:
+  byte_order: little-endian
+members:
+- name: format_version
+  data_type: uint32
+- name: boot_log_start_offset
+  data_type: uint32
+- name: boot_log_size
+  data_type: uint32
+- name: next_boot_log_entry_offset
+  data_type: uint32
+- name: first_boot_log_entry_offset
+  data_type: uint32
+---
+name: bootstat_boot_log_entry_header
+type: structure
+description: Boot log entry header.
+attributes:
+  byte_order: little-endian
+members:
+- name: timestamp
+  data_type: uint64
+- name: application_identifier
+  type: uuid
+- name: entry_size
+  data_type: uint32
+- name: level
+  data_type: uint32
+- name: application_type
+  data_type: uint32
+- name: event_code
+  data_type: uint32
+---
+name: bootstat_time_fields
+type: structure
+description: Time fields (TIME_FIELDS) in local time.
+attributes:
+  byte_order: little-endian
+members:
+- name: year
+  data_type: uint16
+- name: month
+  data_type: uint16
+- name: day_of_month
+  data_type: uint16
+- name: hours
+  data_type: uint16
+- name: minutes
+  data_type: uint16
+- name: seconds
+  data_type: uint16
+- name: milliseconds
+  data_type: uint16
+- name: weekday
+  data_type: uint16
+---
+name: bootstat_boot_loader_initialized_event_data
+type: structure
+description: Windows boot loader initialized (BSD_EVENT_INITIALIZED) event data.
+attributes:
+  byte_order: little-endian
+members:
+- name: time_fields
+  data_type: bootstat_time_fields
+- name: unknown1
+  data_type: uint32
+- name: unknown2
+  data_type: uint32
+- name: last_boot_identifier
+  data_type: uint32

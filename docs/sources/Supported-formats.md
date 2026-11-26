@@ -61,6 +61,7 @@ File System Format support is provided by [dfVFS](https://dfvfs.readthedocs.io/e
 * [utmp, utmpx](https://github.com/libyal/dtformats/blob/main/documentation/Utmp%20login%20records%20format.asciidoc)
 * WinCC Sys Log file
 * Windows Defender scan DetectionHistory file
+* Windows boot status data (bootstat.dat) file
 * [Windows Event Log (EVT)](https://forensics.wiki/windows_event_log_(evt)) using [libevt](https://github.com/libyal/libevt)
 * [Windows Job files](https://forensics.wiki/windows_job_file_format) (also known as "at jobs")
 * Windows PCA DB0 log file
