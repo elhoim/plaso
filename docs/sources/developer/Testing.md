@@ -4,6 +4,7 @@ Plaso comes with multiple forms of tests:
 
 * unit tests
 * end-to-end tests
+* benchmark tests
 
 ## Unit tests
 
@@ -12,10 +13,19 @@ requests). Unit tests are typically small by nature and only test a specific
 part of the code.
 
 The unit tests are stored in the `tests` sub directory, in the same parent
-directory as the plaso module directory. The unit tests can be run with:
+directory as the plaso module directory. The unit tests are run with
+[pytest](https://docs.pytest.org), which is configured in `pytest.ini`. The
+unit tests can be run with:
 
 ```
 python run_tests.py
+```
+
+Arguments passed to `run_tests.py` are passed to pytest, for example to only
+run the tests of the syslog text parser plugin:
+
+```
+python run_tests.py tests/parsers/text_plugins/syslog.py
 ```
 
 Or if you have tox installed:
@@ -27,6 +37,26 @@ tox -epy310
 The unit tests are also run on [GitHub](https://github.com/log2timeline/plaso/actions),
 on Linux, macOS and Windows, after every pull request or commit to detect
 issues early.
+
+## Benchmark tests
+
+The benchmark tests are intended to measure the performance of specific parts
+of the code, such as a parser, and detect performance regressions. The benchmark
+tests are stored in the `benchmarks` sub directory and require
+[pytest-benchmark](https://pytest-benchmark.readthedocs.io). The benchmark tests
+are not part of the unit tests and are not run on GitHub.
+
+The benchmark tests can be run with:
+
+```
+python -m pytest benchmarks
+```
+
+Or if you have tox installed:
+
+```
+tox -ebenchmark
+```
 
 ## End-to-end tests
 

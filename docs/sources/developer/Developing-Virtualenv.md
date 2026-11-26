@@ -66,5 +66,5 @@ ignores your systems package manager.): `pip install --upgrade pip`
     cd plaso
     pip install -e .
     ```
-1. Install the test dependencies (see test_dependencies.ini): `pip install fakeredis`
+1. Install the test dependencies (see test_dependencies.ini): `pip install fakeredis pytest`
 1. Once you finish your development session, deactivate virtualenv: `deactivate`

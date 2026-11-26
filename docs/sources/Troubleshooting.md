@@ -55,10 +55,22 @@ Can you run the tests successfully? For example:
 ```bash
 $ python3 run_tests.py
 ...
-----------------------------------------------------------------------
-Ran 585 tests in 66.530s
+============================= test session starts ==============================
+...
+```
 
-OK
+The tests ran successfully if the summary at the end of the output does not
+report failed tests or errors. Arguments passed to `run_tests.py` are passed to
+pytest, for example to only run the tests of the syslog text parser plugin:
+
+```bash
+$ python3 run_tests.py tests/parsers/text_plugins/syslog.py
+...
+collected 20 items
+
+tests/parsers/text_plugins/syslog.py ....................                [100%]
+...
+======================= 20 passed, 16 warnings in 3.45s ========================
 ```
 
 If an error occurs when processing a storage media image try to run with the
