@@ -6,10 +6,10 @@ import unittest
 try:
     # pylint: disable=ungrouped-imports
     import fakeredis
-    import redis
+    import valkey
     from plaso.storage.redis import redis_store
 except ModuleNotFoundError:
-    redis = None
+    valkey = None
 
 from plaso.containers import events
 from plaso.containers import sessions
@@ -19,7 +19,7 @@ from tests.containers import test_lib as containers_test_lib
 from tests.storage import test_lib
 
 
-@unittest.skipIf(redis is None, "missing redis support")
+@unittest.skipIf(valkey is None, "missing valkey support")
 class RedisAttributeContainerStoreTest(test_lib.StorageTestCase):
     """Tests for the Redis storage object."""
 
@@ -38,10 +38,10 @@ class RedisAttributeContainerStoreTest(test_lib.StorageTestCase):
           Redis: a Redis client.
         """
         try:
-            redis_client = redis.from_url(self._REDIS_URL, socket_timeout=60)
+            redis_client = valkey.from_url(self._REDIS_URL, socket_timeout=60)
             redis_client.ping()
-        except redis.exceptions.ConnectionError:
-            redis_client = fakeredis.FakeStrictRedis()
+        except valkey.exceptions.ConnectionError:
+            redis_client = fakeredis.FakeStrictValkey()
 
         return redis_client
 
@@ -49,7 +49,7 @@ class RedisAttributeContainerStoreTest(test_lib.StorageTestCase):
         """Removes the session data after testing.
 
         Args:
-          redis_client (Redis): an open Redis client.
+          redis_client (Valkey): an open Redis client.
           session_identifier (str): the identifier of the session the tasks are
               part of.
         """

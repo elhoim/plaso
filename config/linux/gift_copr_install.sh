@@ -63,9 +63,9 @@ PYTHON3_DEPENDENCIES="libbde-python3
                       python3-pytsk3
                       python3-pytz
                       python3-pyyaml
-                      python3-redis
                       python3-requests
                       python3-urllib3
+                      python3-valkey
                       python3-xattr
                       python3-xlsxwriter
                       python3-yara

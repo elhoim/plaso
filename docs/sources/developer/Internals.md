@@ -130,7 +130,8 @@ The following storage back-ends are supported:
 
 * SQLite, which is used for the session store and is the default for task stores;
 * Redis, which can be used for task stores, see the `--task_storage_format`
-  option;
+  option. Plaso uses the valkey Python module and supports Redis protocol
+  compatible servers, such as Valkey;
 * a fake, in-memory only, store, which is used for testing.
 
 The storage readers and writers in `plaso/storage/` provide an API to the

@@ -7,7 +7,7 @@ import ast
 import json
 import uuid
 
-import redis  # pylint: disable=import-error
+import valkey  # pylint: disable=import-error
 
 from acstore import interface
 from acstore.containers import interface as containers_interface
@@ -89,12 +89,12 @@ class BaseRedisAttributeContainerStore(interface.AttributeContainerStoreWithRead
         function, and it is not currently supported by the fakeredis test library.
 
         Args:
-          redis_client (Redis): an open Redis client.
+          redis_client (Valkey): an open Redis client.
           name (str): name to set.
         """
         try:
             redis_client.client_setname(name)
-        except redis.ResponseError as exception:
+        except valkey.ResponseError as exception:
             logger.debug(
                 (
                     f"Unable to set redis client name: {name:s} with error: "
@@ -315,7 +315,7 @@ class BaseRedisAttributeContainerStore(interface.AttributeContainerStoreWithRead
         """Opens the store.
 
         Args:
-          redis_client (Optional[Redis]): Redis client to query. If specified, no
+          redis_client (Optional[Valkey]): Redis client to query. If specified, no
               new client will be created. If no client is specified a new client
               will be opened connected to the Redis instance specified by 'url'.
           session_identifier (Optional[str]): identifier of the session.
@@ -335,7 +335,7 @@ class BaseRedisAttributeContainerStore(interface.AttributeContainerStoreWithRead
             if not url:
                 url = self.DEFAULT_REDIS_URL
 
-            redis_client = redis.from_url(url=url, socket_timeout=60)
+            redis_client = valkey.from_url(url=url, socket_timeout=60)
 
         self._redis_client = redis_client
 

@@ -84,7 +84,7 @@ class RedisStorageWriter(writer.StorageWriter):
         """Opens the storage writer.
 
         Args:
-          redis_client (Optional[Redis]): Redis client to query. If specified, no
+          redis_client (Optional[Valkey]): Redis client to query. If specified, no
               new client will be created. If no client is specified a new client
               will be opened connected to the Redis instance specified by 'url'.
           session_identifier (Optional[str]): session identifier.

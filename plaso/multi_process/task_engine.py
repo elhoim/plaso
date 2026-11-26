@@ -10,10 +10,10 @@ from plaso.storage import factory as storage_factory
 
 try:
     # pylint: disable=ungrouped-imports
-    import redis
+    import valkey
     from plaso.storage.redis import redis_store
 except ModuleNotFoundError:
-    redis = None
+    valkey = None
     redis_store = None
 
 
@@ -170,7 +170,7 @@ class TaskMultiProcessEngine(engine.MultiProcessEngine):
                 task_identifiers = [
                     identifier.decode("utf-8") for identifier in task_identifiers
                 ]
-            except redis.exceptions.TimeoutError:
+            except valkey.exceptions.TimeoutError:
                 # If there is a timeout fetching identifiers, we assume that there are
                 # no processed tasks.
                 task_identifiers = []
@@ -303,7 +303,7 @@ class TaskMultiProcessEngine(engine.MultiProcessEngine):
         """
         if task_storage_format == definitions.STORAGE_FORMAT_REDIS and redis_store:
             url = redis_store.RedisAttributeContainerStore.DEFAULT_REDIS_URL
-            self._redis_client = redis.from_url(url=url, socket_timeout=60)
+            self._redis_client = valkey.from_url(url=url, socket_timeout=60)
             self._redis_client.client_setname("task_engine")
 
         elif task_storage_format == definitions.STORAGE_FORMAT_SQLITE:
