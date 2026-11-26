@@ -175,6 +175,16 @@ class ZeroMQQueue(plaso_queue.Queue):
         """
         self._zmq_socket.hwm = self._high_water_mark
 
+    def _CloseZMQSocket(self):
+        """Closes the ZeroMQ socket and terminates the ZeroMQ context."""
+        if self._zmq_socket and not self._zmq_socket.closed:
+            logger.debug(f"[{self.name:s}] Closing socket.")
+            self._zmq_socket.close(linger=self._linger_seconds * 1000)
+
+        if self._zmq_context and not self._zmq_context.closed:
+            logger.debug(f"[{self.name:s}] Terminating context.")
+            self._zmq_context.term()
+
     def _CreateZMQSocket(self):
         """Creates a ZeroMQ socket."""
         logger.debug(f"[{self.name:s}] Creating socket.")
@@ -265,6 +275,8 @@ class ZeroMQQueue(plaso_queue.Queue):
                     f"{self._linger_seconds:d} seconds."
                 )
             )
+
+        self._CloseZMQSocket()
 
     def IsBound(self):
         """Checks if the queue is bound to a port."""
@@ -671,13 +683,18 @@ class ZeroMQBufferedQueue(ZeroMQQueue):
             if self._zmq_thread:
                 logger.debug(f"[{self.name:s}] Waiting for thread to exit.")
                 self._zmq_thread.join(timeout=self.timeout_seconds)
-                if self._zmq_thread.is_alive():
-                    logger.error(
-                        (
-                            f"[{self.name:s}] ZMQ responder thread did not exit within "
-                            f"timeout."
-                        )
+
+            if self._zmq_thread and self._zmq_thread.is_alive():
+                logger.error(
+                    (
+                        f"[{self.name:s}] ZMQ responder thread did not exit within "
+                        f"timeout."
                     )
+                )
+            else:
+                # The ZeroMQ socket is owned by the responder thread, hence it is
+                # only safe to close it once the thread has exited.
+                self._CloseZMQSocket()
         else:
             logger.debug(
                 (

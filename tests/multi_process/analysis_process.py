@@ -2,7 +2,6 @@
 """Tests for the multi-processing analysis process."""
 
 import os
-import time
 import unittest
 
 from plaso.analysis import interface as analysis_interface
@@ -86,6 +85,8 @@ class AnalysisProcessTest(test_lib.MultiProcessingTestCase):
 
     # pylint: disable=protected-access
 
+    _PROCESS_JOIN_TIMEOUT = 60
+
     _QUEUE_TIMEOUT = 5
 
     def testInitialization(self):
@@ -129,8 +130,10 @@ class AnalysisProcessTest(test_lib.MultiProcessingTestCase):
 
     def testMain(self):
         """Tests the _Main function."""
+        # The push is retried until the analysis process has connected to
+        # the queue, which can take longer than the queue timeout.
         output_event_queue = zeromq_queue.ZeroMQPushBindQueue(
-            name="test output event queue", timeout_seconds=self._QUEUE_TIMEOUT
+            name="test output event queue", timeout_seconds=self._PROCESS_JOIN_TIMEOUT
         )
         output_event_queue.Open()
 
@@ -163,12 +166,21 @@ class AnalysisProcessTest(test_lib.MultiProcessingTestCase):
 
             test_process.start()
 
-            output_event_queue.PushItem(plaso_queue.QueueAbort(), block=False)
-            output_event_queue.Close(abort=True)
+            try:
+                output_event_queue.PushItem(plaso_queue.QueueAbort(), block=False)
 
-            # Sleep for 1 second to allow the analysis process to terminate.
-            # Before the temporary directory is removed.
-            time.sleep(1)
+                # Wait for the analysis process to terminate before the temporary
+                # directory is removed.
+                test_process.join(timeout=self._PROCESS_JOIN_TIMEOUT)
+
+            finally:
+                output_event_queue.Close(abort=True)
+
+                if test_process.is_alive():
+                    test_process.terminate()
+                    test_process.join()
+
+            self.assertEqual(test_process.exitcode, 0)
 
     def testProcessEventTriple(self):
         """Tests the _ProcessEventTriple function."""
