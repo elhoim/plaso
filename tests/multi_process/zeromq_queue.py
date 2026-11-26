@@ -126,6 +126,25 @@ class ZeroMQQueuesTest(shared_test_lib.BaseTestCase):
             zmq_context.term()
             test_queue.Close(abort=True)
 
+    def testCloseReleasesPort(self):
+        """Tests that closing a queue releases the port it is bound to."""
+        for abort in (False, True):
+            test_queue = zeromq_queue.ZeroMQPushBindQueue(
+                delay_open=False, linger_seconds=0, name="close_pushbind"
+            )
+            port = test_queue.port
+            test_queue.Close(abort=abort)
+
+            # Closing a queue that was already closed due to an abort condition
+            # should not raise.
+            test_queue.Close(abort=True)
+
+            test_queue = zeromq_queue.ZeroMQPushBindQueue(
+                delay_open=False, linger_seconds=0, name="close_pushbind", port=port
+            )
+            self.assertEqual(test_queue.port, port)
+            test_queue.Close()
+
     def testPushPullQueues(self):
         """Tests than an item can be transferred between push and pull queues."""
         push_queue = zeromq_queue.ZeroMQPushBindQueue(
