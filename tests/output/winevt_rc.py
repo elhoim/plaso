@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """Tests for the Windows Event Log resources database reader."""
 
+import gzip
+import os
 import unittest
 
+from plaso.engine import configurations
+from plaso.engine import profilers
 from plaso.output import winevt_rc
 
 from tests import test_lib as shared_test_lib
@@ -180,6 +184,45 @@ class WinevtResourcesHelperTest(shared_test_lib.BaseTestCase):
                 None,
             ),
             test_helper._message_string_cache,
+        )
+
+    def testGetMessageStringWithCachesProfiler(self):
+        """Tests the GetMessageString function with a caches profiler."""
+        database_path = self._GetTestFilePath(["winevt-rc.db"])
+        self._SkipIfPathNotExists(database_path)
+
+        profiling_configuration = configurations.ProfilingConfiguration()
+
+        with shared_test_lib.TempDirectory() as temp_directory:
+            profiling_configuration.directory = temp_directory
+
+            caches_profiler = profilers.CachesProfiler("test", profiling_configuration)
+            caches_profiler.Start()
+
+            test_helper = winevt_rc.WinevtResourcesHelper(
+                None,
+                shared_test_lib.TEST_DATA_PATH,
+                0x00000409,
+                caches_profiler=caches_profiler,
+            )
+            for message_identifier in (0xB00003ED, 0xB00003ED, 0xFFFFFFFF, 0xFFFFFFFF):
+                test_helper.GetMessageString(
+                    "{15a7a4f8-0072-4eab-abad-f98a4d666aed}",
+                    "Microsoft-Windows-Dhcp-Client",
+                    message_identifier,
+                    None,
+                )
+
+            caches_profiler.Stop()
+
+            sample_file_path = os.path.join(temp_directory, "caches-test.csv.gz")
+            with gzip.open(sample_file_path, "rt", encoding="utf-8") as file_object:
+                lines = file_object.read().splitlines()
+
+        samples = [line.split("\t")[1:] for line in lines[1:]]
+        self.assertEqual(
+            samples,
+            [["winevt_message_strings", "2", "2"]],
         )
 
     def testGetParameterString(self):

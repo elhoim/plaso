@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Tests for the output mediator object."""
 
+import gzip
 import os
 import unittest
 
@@ -10,10 +11,13 @@ from dfvfs.lib import definitions as dfvfs_definitions
 from dfvfs.path import factory as path_spec_factory
 
 from plaso.containers import artifacts
+from plaso.engine import configurations
+from plaso.engine import profilers
 from plaso.lib import definitions
 from plaso.storage.fake import writer as fake_writer
 from plaso.output import mediator
 
+from tests import test_lib as shared_test_lib
 from tests.containers import test_lib as containers_test_lib
 from tests.output import test_lib
 
@@ -47,6 +51,21 @@ class OutputMediatorTest(test_lib.OutputModuleTestCase):
             location=os.path.join(os.path.sep, "cases", "image.dd"),
         ),
     )
+
+    def _ReadCachesProfilerSamples(self, sample_file_path):
+        """Reads the samples of a caches profiler sample file.
+
+        Args:
+          sample_file_path (str): path of the sample file.
+
+        Returns:
+          list[list[str]]: cache name, number of hits and number of misses of
+              each sample.
+        """
+        with gzip.open(sample_file_path, "rt", encoding="utf-8") as file_object:
+            lines = file_object.read().splitlines()
+
+        return [line.split("\t")[1:] for line in lines[1:]]
 
     def testReadMessageFormattersFile(self):
         """Tests the _ReadMessageFormattersFile function."""
@@ -343,6 +362,104 @@ class OutputMediatorTest(test_lib.OutputModuleTestCase):
                 test_file_path, override_existing=True
             )
             self.assertEqual(len(output_mediator._message_formatters), 2)
+
+        finally:
+            storage_writer.Close()
+
+    def testSampleCacheHit(self):
+        """Tests the SampleCacheHit function."""
+        storage_writer = fake_writer.FakeStorageWriter()
+        storage_writer.Open()
+
+        profiling_configuration = configurations.ProfilingConfiguration()
+
+        try:
+            output_mediator = mediator.OutputMediator(storage_writer)
+
+            # Sampling without a caches profiler is ignored.
+            output_mediator.SampleCacheHit("test_cache")
+
+            with shared_test_lib.TempDirectory() as temp_directory:
+                profiling_configuration.directory = temp_directory
+
+                caches_profiler = profilers.CachesProfiler(
+                    "test", profiling_configuration
+                )
+                caches_profiler.Start()
+
+                output_mediator.SetCachesProfiler(caches_profiler)
+                output_mediator.SampleCacheHit("test_cache")
+                output_mediator.SampleCacheHit("test_cache")
+
+                caches_profiler.Stop()
+
+                samples = self._ReadCachesProfilerSamples(
+                    os.path.join(temp_directory, "caches-test.csv.gz")
+                )
+
+            self.assertEqual(samples, [["test_cache", "2", "0"]])
+
+        finally:
+            storage_writer.Close()
+
+    def testSampleCacheMiss(self):
+        """Tests the SampleCacheMiss function."""
+        storage_writer = fake_writer.FakeStorageWriter()
+        storage_writer.Open()
+
+        profiling_configuration = configurations.ProfilingConfiguration()
+
+        try:
+            output_mediator = mediator.OutputMediator(storage_writer)
+
+            # Sampling without a caches profiler is ignored.
+            output_mediator.SampleCacheMiss("test_cache")
+
+            with shared_test_lib.TempDirectory() as temp_directory:
+                profiling_configuration.directory = temp_directory
+
+                caches_profiler = profilers.CachesProfiler(
+                    "test", profiling_configuration
+                )
+                caches_profiler.Start()
+
+                output_mediator.SetCachesProfiler(caches_profiler)
+                output_mediator.SampleCacheMiss("test_cache")
+
+                caches_profiler.Stop()
+
+                samples = self._ReadCachesProfilerSamples(
+                    os.path.join(temp_directory, "caches-test.csv.gz")
+                )
+
+            self.assertEqual(samples, [["test_cache", "0", "1"]])
+
+        finally:
+            storage_writer.Close()
+
+    def testSetCachesProfiler(self):
+        """Tests the SetCachesProfiler function."""
+        storage_writer = fake_writer.FakeStorageWriter()
+        storage_writer.Open()
+
+        profiling_configuration = configurations.ProfilingConfiguration()
+
+        try:
+            output_mediator = mediator.OutputMediator(storage_writer)
+
+            caches_profiler = profilers.CachesProfiler("test", profiling_configuration)
+
+            output_mediator.SetCachesProfiler(caches_profiler)
+            self.assertIs(output_mediator._caches_profiler, caches_profiler)
+
+            winevt_resources_helper = output_mediator.GetWinevtResourcesHelper()
+            self.assertIs(winevt_resources_helper._caches_profiler, caches_profiler)
+
+            output_mediator.SetCachesProfiler(None)
+            self.assertIsNone(output_mediator._caches_profiler)
+
+            winevt_resources_helper = output_mediator.GetWinevtResourcesHelper()
+            self.assertIsNone(winevt_resources_helper._caches_profiler)
 
         finally:
             storage_writer.Close()

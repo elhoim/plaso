@@ -43,6 +43,7 @@ class BaseEngine:
         self._analyzers_profiler = None
         self._artifacts_registry = None
         self._artifacts_trie = None
+        self._caches_profiler = None
         self._excluded_file_system_find_specs = None
         self._included_file_system_find_specs = None
         self._memory_profiler = None
@@ -70,6 +71,10 @@ class BaseEngine:
         if configuration.HaveProfileMemory():
             self._memory_profiler = profilers.MemoryProfiler(self._name, configuration)
             self._memory_profiler.Start()
+
+        if configuration.HaveProfileCaches():
+            self._caches_profiler = profilers.CachesProfiler(self._name, configuration)
+            self._caches_profiler.Start()
 
         if configuration.HaveProfileAnalyzers():
             self._analyzers_profiler = profilers.AnalyzersProfiler(
@@ -106,6 +111,10 @@ class BaseEngine:
         if self._memory_profiler:
             self._memory_profiler.Stop()
             self._memory_profiler = None
+
+        if self._caches_profiler:
+            self._caches_profiler.Stop()
+            self._caches_profiler = None
 
         if self._analyzers_profiler:
             self._analyzers_profiler.Stop()

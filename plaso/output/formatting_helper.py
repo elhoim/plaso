@@ -704,7 +704,11 @@ class FieldFormattingHelper:
         message_formatter, event_values = self._formatted_event_values_cache.Get(
             output_mediator, event_data
         )
-        if message_formatter is None:
+        if message_formatter is not None:
+            output_mediator.SampleCacheHit("formatted_event_values")
+        else:
+            output_mediator.SampleCacheMiss("formatted_event_values")
+
             message_formatter = output_mediator.GetMessageFormatter(
                 event_data.data_type
             )
@@ -775,8 +779,12 @@ class FieldFormattingHelper:
             field_values = self._formatted_field_values_cache.GetFieldValues(
                 output_mediator, event_data
             )
-            if field_values is not None and field_name in field_values:
-                return field_values[field_name]
+            if field_values is not None:
+                if field_name in field_values:
+                    output_mediator.SampleCacheHit("formatted_field_values")
+                    return field_values[field_name]
+
+                output_mediator.SampleCacheMiss("formatted_field_values")
 
         callback_function = self._callback_functions.get(field_name)
         if callback_function:
