@@ -93,6 +93,103 @@ class SampleFileProfiler:
         self._sample_file = None
 
 
+class CachesProfiler(SampleFileProfiler):
+    """The caches profiler.
+
+    The number of cache hits and misses are counted per cache. A sample with the
+    cumulative counts of a cache is written every sample rate number of lookups of that
+    cache and when the profiler is stopped.
+    """
+
+    _FILENAME_PREFIX = "caches"
+
+    _FILE_HEADER = "Time\tName\tHits\tMisses\n"
+
+    def __init__(self, identifier, configuration):
+        """Initializes a caches profiler.
+
+        Args:
+          identifier (str): identifier of the profiling session used to create
+              the sample filename.
+          configuration (ProfilingConfiguration): profiling configuration.
+        """
+        super().__init__(identifier, configuration)
+        self._number_of_hits = {}
+        self._number_of_misses = {}
+        self._sample_rate = configuration.sample_rate
+
+    def _Sample(self, cache_name, is_hit):
+        """Counts a cache lookup and writes a sample if needed.
+
+        Lookups are ignored when the profiler is not started, since cache owners,
+        such as the Windows EventLog resources helper, can outlive the profiler.
+
+        Args:
+          cache_name (str): name of the cache.
+          is_hit (bool): True if the lookup was a cache hit.
+        """
+        if not self._sample_file:
+            return
+
+        number_of_hits = self._number_of_hits.get(cache_name, 0)
+        number_of_misses = self._number_of_misses.get(cache_name, 0)
+
+        if is_hit:
+            number_of_hits += 1
+        else:
+            number_of_misses += 1
+
+        self._number_of_hits[cache_name] = number_of_hits
+        self._number_of_misses[cache_name] = number_of_misses
+
+        number_of_lookups = number_of_hits + number_of_misses
+        if self._sample_rate and number_of_lookups % self._sample_rate == 0:
+            self._WriteSample(cache_name)
+
+    def _WriteSample(self, cache_name):
+        """Writes a sample with the cumulative counts of a cache.
+
+        Args:
+          cache_name (str): name of the cache.
+        """
+        sample_time = time.time()
+        number_of_hits = self._number_of_hits.get(cache_name, 0)
+        number_of_misses = self._number_of_misses.get(cache_name, 0)
+
+        self._WritesString(
+            (
+                f"{sample_time:f}\t{cache_name:s}\t{number_of_hits:d}\t"
+                f"{number_of_misses:d}\n"
+            )
+        )
+
+    def SampleHit(self, cache_name):
+        """Takes a sample of a cache hit for profiling.
+
+        Args:
+          cache_name (str): name of the cache.
+        """
+        self._Sample(cache_name, True)
+
+    def SampleMiss(self, cache_name):
+        """Takes a sample of a cache miss for profiling.
+
+        Args:
+          cache_name (str): name of the cache.
+        """
+        self._Sample(cache_name, False)
+
+    def Stop(self):
+        """Stops the profiler."""
+        cache_names = set(self._number_of_hits.keys())
+        cache_names.update(self._number_of_misses.keys())
+
+        for cache_name in sorted(cache_names):
+            self._WriteSample(cache_name)
+
+        super().Stop()
+
+
 class CPUTimeProfiler(SampleFileProfiler):
     """The CPU time profiler."""
 

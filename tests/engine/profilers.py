@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Tests for the profiler classes."""
 
+import gzip
+import os
 import time
 import unittest
 
@@ -49,6 +51,50 @@ class SampleFileProfilerTest(shared_test_lib.BaseTestCase):
             test_profiler.Start()
 
             test_profiler.Stop()
+
+
+class CachesProfilerTest(shared_test_lib.BaseTestCase):
+    """Tests for the caches profiler."""
+
+    def testSample(self):
+        """Tests the SampleHit and SampleMiss functions."""
+        profiling_configuration = configurations.ProfilingConfiguration()
+        profiling_configuration.sample_rate = 2
+
+        with shared_test_lib.TempDirectory() as temp_directory:
+            profiling_configuration.directory = temp_directory
+
+            test_profiler = profilers.CachesProfiler("test", profiling_configuration)
+
+            # Test that lookups are ignored when the profiler is not started.
+            test_profiler.SampleHit("test_cache")
+
+            test_profiler.Start()
+
+            test_profiler.SampleMiss("test_cache")
+            test_profiler.SampleHit("test_cache")
+            test_profiler.SampleHit("test_cache")
+            test_profiler.SampleMiss("other_cache")
+
+            test_profiler.Stop()
+
+            test_profiler.SampleHit("test_cache")
+
+            sample_file_path = os.path.join(temp_directory, "caches-test.csv.gz")
+            with gzip.open(sample_file_path, "rt", encoding="utf-8") as file_object:
+                lines = file_object.read().splitlines()
+
+        self.assertEqual(lines[0], "Time\tName\tHits\tMisses")
+
+        samples = [line.split("\t")[1:] for line in lines[1:]]
+        self.assertEqual(
+            samples,
+            [
+                ["test_cache", "1", "1"],
+                ["other_cache", "0", "1"],
+                ["test_cache", "2", "1"],
+            ],
+        )
 
 
 class CPUTimeProfilerTest(shared_test_lib.BaseTestCase):

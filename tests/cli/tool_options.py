@@ -321,6 +321,7 @@ class ProfilingOptionsTest(test_lib.CLIToolTestCase):
          Name : Description
 --------------------------------------------------------------------------------
     analyzers : Profile CPU time of analyzers, like hashing
+       caches : Profile cache hits and misses
 format_checks : Profile CPU time per format check
        memory : Profile memory usage over time
       parsers : Profile CPU time per parser

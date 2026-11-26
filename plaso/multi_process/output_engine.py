@@ -689,6 +689,8 @@ class OutputAndFormattingMultiProcessEngine(engine.MultiProcessEngine):
 
         self._StartProfiling(self._processing_configuration.profiling)
 
+        self._output_mediator.SetCachesProfiler(self._caches_profiler)
+
         try:
             self._ExportEvents(
                 storage_reader,
@@ -710,6 +712,8 @@ class OutputAndFormattingMultiProcessEngine(engine.MultiProcessEngine):
 
         # Update the status view one last time.
         self._UpdateStatus()
+
+        self._output_mediator.SetCachesProfiler(None)
 
         self._StopProfiling()
 

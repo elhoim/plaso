@@ -53,6 +53,7 @@ class OutputMediator:
               specification as fallback for the filename and inode fields.
         """
         super().__init__()
+        self._caches_profiler = None
         self._dynamic_time = dynamic_time
         self._hostname = None
         self._language_tag = None
@@ -388,7 +389,10 @@ class OutputMediator:
             lcid = self._DEFAULT_LCID
 
         return winevt_rc.WinevtResourcesHelper(
-            self._storage_reader, self.data_location, lcid
+            self._storage_reader,
+            self.data_location,
+            lcid,
+            caches_profiler=self._caches_profiler,
         )
 
     def ReadMessageFormattersFromDirectory(self, path):
@@ -418,6 +422,33 @@ class OutputMediator:
               data type.
         """
         self._ReadMessageFormattersFile(path, override_existing=override_existing)
+
+    def SampleCacheHit(self, cache_name):
+        """Takes a sample of a cache hit for profiling.
+
+        Args:
+          cache_name (str): name of the cache.
+        """
+        if self._caches_profiler:
+            self._caches_profiler.SampleHit(cache_name)
+
+    def SampleCacheMiss(self, cache_name):
+        """Takes a sample of a cache miss for profiling.
+
+        Args:
+          cache_name (str): name of the cache.
+        """
+        if self._caches_profiler:
+            self._caches_profiler.SampleMiss(cache_name)
+
+    def SetCachesProfiler(self, caches_profiler):
+        """Sets the caches profiler.
+
+        Args:
+          caches_profiler (CachesProfiler): caches profiler or None to disable
+              caches profiling.
+        """
+        self._caches_profiler = caches_profiler
 
     def SetPreferredLanguageIdentifier(self, language_tag):
         """Sets the preferred language identifier.

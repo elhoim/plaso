@@ -342,18 +342,20 @@ class WinevtResourcesHelper:
 
     _WINEVT_RC_DATABASE = "winevt-rc.db"
 
-    def __init__(self, storage_reader, data_location, lcid):
+    def __init__(self, storage_reader, data_location, lcid, caches_profiler=None):
         """Initializes Windows EventLog resources helper.
 
         Args:
           storage_reader (StorageReader): storage reader.
           data_location (str): data location of the winevt-rc database.
           lcid (int): Windows Language Code Identifier (LCID).
+          caches_profiler (Optional[CachesProfiler]): caches profiler.
         """
         language_tag = languages.WindowsLanguageHelper.GetLanguageTagForLCID(
             lcid or self.DEFAULT_LCID
         )
         super().__init__()
+        self._caches_profiler = caches_profiler
         self._data_location = data_location
         self._environment_variables = None
         self._language_tag = language_tag.lower()
@@ -998,6 +1000,18 @@ class WinevtResourcesHelper:
                     log_source = log_source.lower()
                     self._windows_eventlog_providers[log_source] = provider
 
+    def _SampleCacheLookup(self, cache_name, is_hit):
+        """Takes a sample of a cache lookup for profiling.
+
+        Args:
+          cache_name (str): name of the cache.
+          is_hit (bool): True if the lookup was a cache hit.
+        """
+        if is_hit:
+            self._caches_profiler.SampleHit(cache_name)
+        else:
+            self._caches_profiler.SampleMiss(cache_name)
+
     def GetMessageString(
         self, provider_identifier, log_source, message_identifier, event_version
     ):
@@ -1021,6 +1035,9 @@ class WinevtResourcesHelper:
             message_identifier,
             event_version,
         )
+        if self._caches_profiler:
+            self._SampleCacheLookup("winevt_message_strings", is_cached)
+
         if is_cached:
             return message_string
 
@@ -1062,6 +1079,9 @@ class WinevtResourcesHelper:
         is_cached, message_string = self._GetCachedMessageString(
             "parameter", provider_identifier, log_source, message_identifier, None
         )
+        if self._caches_profiler:
+            self._SampleCacheLookup("winevt_message_strings", is_cached)
+
         if is_cached:
             return message_string
 

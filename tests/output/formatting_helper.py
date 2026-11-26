@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Tests for the output module field formatting helper."""
 
+import gzip
+import os
 import unittest
 
 from acstore.containers import interface as containers_interface
@@ -12,10 +14,13 @@ from dfdatetime import semantic_time as dfdatetime_semantic_time
 from dfvfs.path import fake_path_spec
 
 from plaso.containers import events
+from plaso.engine import configurations
+from plaso.engine import profilers
 from plaso.formatters import interface as formatters_interface
 from plaso.lib import definitions
 from plaso.output import formatting_helper
 
+from tests import test_lib as shared_test_lib
 from tests.containers import test_lib as containers_test_lib
 from tests.output import test_lib
 
@@ -939,6 +944,65 @@ class FieldFormattingHelperTest(test_lib.OutputModuleTestCase):
         self.assertEqual(message1_new, expected_message1)
         self.assertEqual(test_helper.number_of_formatted_display_names, 4)
         self.assertEqual(counting_helper2.number_of_calls, 1)
+
+    def testGetFormattedFieldWithCachesProfiler(self):
+        """Tests the GetFormattedField function with a caches profiler."""
+        output_mediator = self._CreateOutputMediator()
+
+        formatters_directory_path = self._GetTestFilePath(["formatters"])
+        output_mediator.ReadMessageFormattersFromDirectory(formatters_directory_path)
+
+        profiling_configuration = configurations.ProfilingConfiguration()
+
+        test_helper = CountingFieldFormattingHelper()
+
+        event, event_data, event_data_stream = (
+            containers_test_lib.CreateEventFromValues(self._TEST_EVENTS[0])
+        )
+        event_data.SetIdentifier(
+            containers_interface.AttributeContainerIdentifier(
+                name="event_data", sequence_number=1
+            )
+        )
+
+        with shared_test_lib.TempDirectory() as temp_directory:
+            profiling_configuration.directory = temp_directory
+
+            caches_profiler = profilers.CachesProfiler("test", profiling_configuration)
+            caches_profiler.Start()
+
+            output_mediator.SetCachesProfiler(caches_profiler)
+
+            for field_name in (
+                "display_name",
+                "display_name",
+                "message",
+                "message_short",
+            ):
+                test_helper.GetFormattedField(
+                    output_mediator,
+                    field_name,
+                    event,
+                    event_data,
+                    event_data_stream,
+                    None,
+                )
+
+            output_mediator.SetCachesProfiler(None)
+            caches_profiler.Stop()
+
+            sample_file_path = os.path.join(temp_directory, "caches-test.csv.gz")
+            with gzip.open(sample_file_path, "rt", encoding="utf-8") as file_object:
+                lines = file_object.read().splitlines()
+
+        samples = [line.split("\t")[1:] for line in lines[1:]]
+        self.assertEqual(
+            samples,
+            [
+                ["formatted_event_values", "1", "1"],
+                ["formatted_field_values", "1", "3"],
+            ],
+        )
 
 
 class FormattedEventValuesCacheTest(test_lib.OutputModuleTestCase):

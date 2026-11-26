@@ -12,6 +12,40 @@ log2timeline.py --profilers list
 The profilers write their sample files to the directory specified by
 `--profiling-directory`, by default the current working directory.
 
+## Profiling caches
+
+The number of hits and misses of various caches can be profiled with the caches
+profiler. Currently only the caches used to format output are profiled, hence
+the caches profiler is used with psort.py.
+
+To profile the caches run psort.py with the following options:
+
+```bash
+psort.py --profilers=caches --profiling-directory=profile -o dynamic -w timeline.csv timeline.plaso
+```
+
+The caches profiler writes its samples to a file named `caches-Main.csv.gz`
+with the following tab separated columns:
+
+Name | Description
+--- | ---
+Time | Time the sample was taken, in number of seconds since January 1, 1970 00:00:00 UTC
+Name | Name of the cache
+Hits | Cumulative number of cache hits
+Misses | Cumulative number of cache misses
+
+A sample is written every sample rate number of lookups of a cache and for
+every cache when profiling stops. The sample rate can be set with
+`--profiling-sample-rate`. The last sample of a cache contains its totals.
+
+The following caches are profiled:
+
+Name | Description
+--- | ---
+formatted_event_values | Formatted event values of the last event data, used by the message fields
+formatted_field_values | Formatted field values per event data
+winevt_message_strings | Windows EventLog message strings, including lookups of message strings that are not available
+
 ## Profiling CPU usage
 
 The CPU usage of various parts of Plaso its processing can be profiled with the
