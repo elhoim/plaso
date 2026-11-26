@@ -430,6 +430,14 @@ plaso.parsers.windefender\_history module
    :show-inheritance:
    :undoc-members:
 
+plaso.parsers.windows\_bootstat module
+--------------------------------------
+
+.. automodule:: plaso.parsers.windows_bootstat
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 plaso.parsers.winevt module
 ---------------------------
 

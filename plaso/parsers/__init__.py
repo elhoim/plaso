@@ -44,6 +44,7 @@ from plaso.parsers import utmp
 from plaso.parsers import utmpx
 from plaso.parsers import wincc
 from plaso.parsers import windefender_history
+from plaso.parsers import windows_bootstat
 from plaso.parsers import winevt
 from plaso.parsers import winevtx
 from plaso.parsers import winjob

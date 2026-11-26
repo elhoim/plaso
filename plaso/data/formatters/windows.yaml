@@ -62,6 +62,33 @@ short_source: 'LOG'
 source: 'WinCC Sys Log'
 ---
 type: 'conditional'
+data_type: 'windows:bootstat:boot'
+enumeration_helpers:
+- input_attribute: 'application_type'
+  output_attribute: 'application_type'
+  default_value: 'UNKNOWN'
+  values:
+    2: 'Windows boot manager'
+    3: 'Windows boot loader'
+- input_attribute: 'level'
+  output_attribute: 'level'
+  default_value: 'UNKNOWN'
+  values:
+    0: 'Success'
+    1: 'Information'
+    2: 'Warning'
+    3: 'Error'
+message:
+- 'Boot application: {application_type}'
+- 'Application identifier: {application_identifier}'
+- 'Last boot identifier: {last_boot_identifier}'
+- 'Level: {level}'
+short_message:
+- 'Boot application: {application_type}'
+short_source: 'LOG'
+source: 'Windows Boot Status Data Log'
+---
+type: 'conditional'
 data_type: 'windows:diagnosis:eventtranscript'
 message:
 - 'Event: {event_name}'

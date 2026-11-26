@@ -183,6 +183,7 @@ parsers:
 - text/powershell_transcript
 - winevtx
 - win_gen
+- windows_bootstat
 - winpca_db0
 - winpca_dic
 ---
