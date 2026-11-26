@@ -323,6 +323,30 @@ attribute_mappings:
   description: 'Recorded Time'
 place_holder_event: true
 ---
+data_type: 'chrome:session:navigation'
+attribute_mappings:
+- name: 'last_visited_time'
+  description: 'Last Visited Time'
+place_holder_event: true
+---
+data_type: 'chrome:session:tab_closed'
+attribute_mappings:
+- name: 'close_time'
+  description: 'Closed Time'
+place_holder_event: true
+---
+data_type: 'chrome:session:tab_last_active'
+attribute_mappings:
+- name: 'last_active_time'
+  description: 'Last Active Time'
+place_holder_event: true
+---
+data_type: 'chrome:session:window_closed'
+attribute_mappings:
+- name: 'close_time'
+  description: 'Closed Time'
+place_holder_event: true
+---
 data_type: 'confluence:access'
 attribute_mappings:
 - name: 'recorded_time'

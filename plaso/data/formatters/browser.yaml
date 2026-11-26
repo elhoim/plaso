@@ -246,6 +246,67 @@ short_source: 'LOG'
 source: 'Chrome Preferences'
 ---
 type: 'conditional'
+data_type: 'chrome:session:navigation'
+enumeration_helpers:
+- input_attribute: 'page_transition_type'
+  output_attribute: 'page_transition'
+  default_value: 'UNKNOWN'
+  # Also see: https://cs.chromium.org/chromium/src/ui/base/page_transition_types.h
+  values:
+    0: 'LINK - User clicked a link'
+    1: 'TYPED - User typed the URL in the URL bar'
+    2: 'AUTO_BOOKMARK - Got through a suggestion in the UI'
+    3: 'AUTO_SUBFRAME - Content automatically loaded in a non-toplevel frame - user may not realize'
+    4: 'MANUAL_SUBFRAME - Subframe explicitly requested by the user'
+    5: 'GENERATED - User typed in the URL bar and selected an entry from the list - such as a search bar'
+    6: 'START_PAGE - The start page of the browser'
+    7: 'FORM_SUBMIT - A form the user has submitted values to'
+    8: 'RELOAD - The user reloaded the page, eg by hitting the reload button or restored a session'
+    9: 'KEYWORD - URL what was generated from a replaceable keyword other than the default search provider'
+    10: 'KEYWORD_GENERATED - Corresponds to a visit generated from a KEYWORD'
+message:
+- '{url}'
+- '({title})'
+- 'Referrer: {referrer_url}'
+- 'Type: [{page_transition}]'
+- 'HTTP status code: {http_status_code}'
+- 'Navigation index: {navigation_index}'
+- 'Tab: {tab_identifier}'
+- 'Window: {window_identifier}'
+short_message:
+- '{url}'
+- '({title})'
+short_source: 'WEBHIST'
+source: 'Chrome Session'
+---
+type: 'conditional'
+data_type: 'chrome:session:tab_closed'
+message:
+- 'Tab: {tab_identifier} closed'
+short_message:
+- 'Tab: {tab_identifier} closed'
+short_source: 'WEBHIST'
+source: 'Chrome Session'
+---
+type: 'conditional'
+data_type: 'chrome:session:tab_last_active'
+message:
+- 'Tab: {tab_identifier} last active'
+short_message:
+- 'Tab: {tab_identifier} last active'
+short_source: 'WEBHIST'
+source: 'Chrome Session'
+---
+type: 'conditional'
+data_type: 'chrome:session:window_closed'
+message:
+- 'Window: {window_identifier} closed'
+short_message:
+- 'Window: {window_identifier} closed'
+short_source: 'WEBHIST'
+source: 'Chrome Session'
+---
+type: 'conditional'
 data_type: 'cookie:google:analytics:utma'
 message:
 - '{url}'

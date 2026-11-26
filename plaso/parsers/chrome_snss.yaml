@@ -1,0 +1,235 @@
+# dtFabric format specification.
+---
+name: chrome_snss
+type: format
+description: Chrome session (SNSS) file format
+urls:
+- "https://chromium.googlesource.com/chromium/src/+/refs/tags/148.0.7778.96/components/sessions/core/command_storage_backend.cc"
+- "https://chromium.googlesource.com/chromium/src/+/refs/tags/148.0.7778.96/components/sessions/core/session_service_commands.cc"
+- "https://chromium.googlesource.com/chromium/src/+/refs/tags/148.0.7778.96/components/sessions/core/serialized_navigation_entry.cc"
+- "https://chromium.googlesource.com/chromium/src/+/refs/tags/148.0.7778.96/components/sessions/core/tab_restore_service_impl.cc"
+---
+name: byte
+type: integer
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: int32
+type: integer
+attributes:
+  format: signed
+  size: 4
+  units: bytes
+---
+name: int64
+type: integer
+attributes:
+  format: signed
+  size: 8
+  units: bytes
+---
+name: uint8
+type: integer
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: uint16
+type: integer
+attributes:
+  format: unsigned
+  size: 2
+  units: bytes
+---
+name: uint32
+type: integer
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: chrome_snss_file_header
+type: structure
+description: Chrome SNSS file header.
+attributes:
+  byte_order: little-endian
+members:
+- name: signature
+  type: stream
+  element_data_type: byte
+  number_of_elements: 4
+  value: "SNSS"
+- name: format_version
+  data_type: int32
+---
+name: chrome_snss_command_header
+type: structure
+description: Chrome SNSS command header.
+attributes:
+  byte_order: little-endian
+members:
+- name: command_size
+  data_type: uint16
+- name: command_identifier
+  data_type: uint8
+---
+name: chrome_snss_closed_payload
+type: structure
+description: Chrome SNSS tab or window closed command payload.
+attributes:
+  byte_order: little-endian
+members:
+- name: identifier
+  data_type: int32
+- name: unknown1
+  data_type: uint32
+- name: close_time
+  data_type: int64
+---
+name: chrome_snss_last_active_time_payload
+type: structure
+description: Chrome SNSS tab last active time command payload.
+attributes:
+  byte_order: little-endian
+members:
+- name: tab_identifier
+  data_type: int32
+- name: unknown1
+  data_type: uint32
+- name: last_active_time
+  data_type: int64
+---
+name: chrome_snss_set_tab_window_payload
+type: structure
+description: Chrome SNSS set tab window command payload.
+attributes:
+  byte_order: little-endian
+members:
+- name: window_identifier
+  data_type: int32
+- name: tab_identifier
+  data_type: int32
+---
+name: chrome_snss_selected_navigation_in_tab_payload
+type: structure
+description: Chrome SNSS tab restore selected navigation in tab command payload.
+attributes:
+  byte_order: little-endian
+members:
+- name: tab_identifier
+  data_type: int32
+- name: navigation_index
+  data_type: int32
+- name: timestamp
+  data_type: int64
+---
+name: chrome_snss_window_pickle
+type: structure
+description: Chrome SNSS tab restore window command pickle.
+attributes:
+  byte_order: little-endian
+members:
+- name: payload_size
+  data_type: uint32
+- name: window_identifier
+  data_type: int32
+- name: selected_tab_index
+  data_type: int32
+- name: number_of_tabs
+  data_type: int32
+- name: timestamp
+  data_type: int64
+---
+name: chrome_snss_navigation_pickle
+type: structure
+description: Chrome SNSS update tab navigation command pickle.
+attributes:
+  byte_order: little-endian
+members:
+- name: payload_size
+  data_type: uint32
+- name: tab_identifier
+  data_type: int32
+- name: navigation_index
+  data_type: int32
+- name: url_size
+  data_type: uint32
+- name: url
+  type: string
+  encoding: utf8
+  element_data_type: byte
+  elements_data_size: chrome_snss_navigation_pickle.url_size
+- name: url_alignment_padding
+  type: padding
+  alignment_size: 4
+- name: title_number_of_characters
+  data_type: uint32
+- name: title
+  type: string
+  encoding: utf-16-le
+  element_data_type: uint16
+  number_of_elements: chrome_snss_navigation_pickle.title_number_of_characters
+- name: title_alignment_padding
+  type: padding
+  alignment_size: 4
+- name: page_state_size
+  data_type: uint32
+- name: page_state
+  type: stream
+  element_data_type: byte
+  elements_data_size: chrome_snss_navigation_pickle.page_state_size
+- name: page_state_alignment_padding
+  type: padding
+  alignment_size: 4
+- name: page_transition_type
+  data_type: uint32
+---
+name: chrome_snss_navigation_pickle_extension
+type: structure
+description: Chrome SNSS update tab navigation command pickle extension.
+attributes:
+  byte_order: little-endian
+members:
+- name: type_mask
+  data_type: uint32
+- name: referrer_url_size
+  data_type: uint32
+- name: referrer_url
+  type: string
+  encoding: utf8
+  element_data_type: byte
+  elements_data_size: chrome_snss_navigation_pickle_extension.referrer_url_size
+- name: referrer_url_alignment_padding
+  type: padding
+  alignment_size: 4
+- name: obsolete_referrer_policy
+  data_type: int32
+- name: original_request_url_size
+  data_type: uint32
+- name: original_request_url
+  type: string
+  encoding: utf8
+  element_data_type: byte
+  elements_data_size: chrome_snss_navigation_pickle_extension.original_request_url_size
+- name: original_request_url_alignment_padding
+  type: padding
+  alignment_size: 4
+- name: is_overriding_user_agent
+  data_type: uint32
+- name: timestamp
+  data_type: int64
+- name: search_terms_number_of_characters
+  data_type: uint32
+- name: search_terms
+  type: string
+  encoding: utf-16-le
+  element_data_type: uint16
+  number_of_elements: chrome_snss_navigation_pickle_extension.search_terms_number_of_characters
+- name: search_terms_alignment_padding
+  type: padding
+  alignment_size: 4
+- name: http_status_code
+  data_type: int32

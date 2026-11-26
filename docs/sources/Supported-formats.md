@@ -24,6 +24,7 @@ File System Format support is provided by [dfVFS](https://dfvfs.readthedocs.io/e
 * Bencode files
 * [Chrome Disk Cache Format](https://forensics.wiki/chrome_disk_cache_format)
 * Chrome preferences
+* Chrome session (SNSS) file
 * Compound ZIP file
 * CUPS IPP
 * [Extensible Storage Engine (ESE) Database File (EDB) format](https://forensics.wiki/extensible_storage_engine_(ese)_database_file_(edb)_format) using [libesedb](https://github.com/libyal/libesedb)
