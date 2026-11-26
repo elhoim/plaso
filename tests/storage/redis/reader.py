@@ -6,10 +6,10 @@ import unittest
 try:
     # pylint: disable=ungrouped-imports
     import fakeredis
-    import redis
+    import valkey
     from plaso.storage.redis import reader
 except ModuleNotFoundError:
-    redis = None
+    valkey = None
 
 from plaso.containers import sessions
 from plaso.containers import tasks
@@ -17,7 +17,7 @@ from plaso.containers import tasks
 from tests.storage import test_lib
 
 
-@unittest.skipIf(redis is None, "missing redis support")
+@unittest.skipIf(valkey is None, "missing valkey support")
 class RedisStorageReaderTest(test_lib.StorageTestCase):
     """Tests for the Redis storage file reader."""
 
@@ -34,10 +34,10 @@ class RedisStorageReaderTest(test_lib.StorageTestCase):
           Redis: a Redis client.
         """
         try:
-            redis_client = redis.from_url(self._REDIS_URL, socket_timeout=60)
+            redis_client = valkey.from_url(self._REDIS_URL, socket_timeout=60)
             redis_client.ping()
-        except redis.exceptions.ConnectionError:
-            redis_client = fakeredis.FakeStrictRedis()
+        except valkey.exceptions.ConnectionError:
+            redis_client = fakeredis.FakeStrictValkey()
 
         return redis_client
 

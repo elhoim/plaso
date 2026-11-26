@@ -68,10 +68,10 @@ PYTHON_DEPENDENCIES="libbde-python3
                      python3-psutil
                      python3-pyparsing
                      python3-pytsk3
-                     python3-redis
                      python3-requests
                      python3-tz
                      python3-urllib3
+                     python3-valkey
                      python3-xattr
                      python3-xlsxwriter
                      python3-yaml

@@ -13,7 +13,7 @@ class RedisStorageReader(reader.StorageReader):
         Args:
           session_identifier (str): session identifier.
           task_identifier (str): task identifier.
-          redis_client (Optional[Redis]): Redis client to query. If specified, no
+          redis_client (Optional[Valkey]): Redis client to query. If specified, no
               new client will be created. If no client is specified a new client
               will be opened connected to the Redis instance specified by 'url'.
         """
