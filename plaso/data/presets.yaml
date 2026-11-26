@@ -123,6 +123,7 @@ parsers:
 - binary_cookies
 - chrome_cache
 - chrome_preferences
+- chrome_snss
 - esedb/msie_webcache
 - firefox_cache
 - java_idx

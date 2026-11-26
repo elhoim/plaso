@@ -78,6 +78,14 @@ plaso.parsers.chrome\_preferences module
    :show-inheritance:
    :undoc-members:
 
+plaso.parsers.chrome\_snss module
+---------------------------------
+
+.. automodule:: plaso.parsers.chrome_snss
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 plaso.parsers.cups\_ipp module
 ------------------------------
 
