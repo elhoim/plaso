@@ -12,10 +12,19 @@ requests). Unit tests are typically small by nature and only test a specific
 part of the code.
 
 The unit tests are stored in the `tests` sub directory, in the same parent
-directory as the plaso module directory. The unit tests can be run with:
+directory as the plaso module directory. The unit tests are run with
+[pytest](https://docs.pytest.org), which is configured in `pytest.ini`. The
+unit tests can be run with:
 
 ```
 python run_tests.py
+```
+
+Arguments passed to `run_tests.py` are passed to pytest, for example to only
+run the tests of the syslog text parser plugin:
+
+```
+python run_tests.py tests/parsers/text_plugins/syslog.py
 ```
 
 Or if you have tox installed:

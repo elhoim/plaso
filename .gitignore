@@ -39,6 +39,7 @@
 /.vscode
 
 # Test files
+/.pytest_cache
 .coverage
 tests-coverage.txt
 
